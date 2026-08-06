@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width-width, initial-scale=1.0">
+    <title>DPL Data Bank</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Login Page -->
+    <div id="login-page" class="page active">
+        <div class="auth-box">
+            <div class="auth-header">
+                <h1>DPL Data Bank</h1>
+                <p>Please sign in to continue</p>
+            </div>
+            <form id="login-form" autocomplete="on">
+                <div class="form-group">
+                    <label for="login-username">Username</label>
+                    <input type="text" id="login-username" placeholder="Enter username" autocomplete="username" required>
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" placeholder="Enter password" autocomplete="current-password" required>
+                </div>
+                <button type="submit" id="btn-login" class="btn btn-primary btn-full">Login</button>
+                <div id="login-error" class="error-msg hidden"></div>
+            </form>
+            <div class="auth-footer">
+                <p>Default admin: <strong>admin / admin123</strong></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboard-page" class="page">
+        <button id="btn-sidebar-toggle" class="sidebar-toggle" aria-label="Toggle sidebar">
+            <span></span><span></span><span></span>
+        </button>
+        <div id="sidebar-backdrop" class="sidebar-backdrop"></div>
+
+        <!-- Sidebar -->
+        <nav id="sidebar">
+            <div class="sidebar-header">
+                <h2>DPL Data Bank</h2>
+                <div id="user-info">
+                    <span id="user-name"></span>
+                    <span id="user-level-badge"></span>
+                </div>
+            </div>
+            <ul class="sidebar-menu" id="sidebar-menu">
+                <!-- Populated by app.js based on user permissions -->
+            </ul>
+            <div class="sidebar-footer">
+                <button id="btn-logout" class="btn btn-danger btn-full">Logout</button>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main id="main-content">
+            <header class="topbar">
+                <h1 id="page-title">Dashboard</h1>
+                <div class="topbar-info">
+                    <span id="topbar-user"></span>
+                </div>
+            </header>
+            <div id="page-content">
+                <!-- Sections rendered here by page modules -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast container -->
+    <div id="toast-container"></div>
+
+    <!-- Modal container -->
+    <div id="modal-container" class="modal-overlay">
+        <div class="modal">
+            <h3 id="modal-title"></h3>
+            <div id="modal-body"></div>
+            <div class="modal-actions" id="modal-actions"></div>
+        </div>
+    </div>
+
+    <!-- Scripts loaded in order -->
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/mapping.js"></script>
+    <script src="js/table.js"></script>
+    <script src="js/logs.js"></script>
+    <script src="js/customfields.js"></script>
+    <script src="js/users.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
