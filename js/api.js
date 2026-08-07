@@ -1,6 +1,13 @@
 // ===== API Client =====
 
 const API_BASE = 'https://dpl-project.onrender.com';
+const API_TIMEOUT = 60000; // 60 seconds — Render free tier cold start
+
+function withTimeout(ms) {
+    return new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Request timed out. Please try again.')), ms)
+    );
+}
 
 async function apiRequest(endpoint, options = {}) {
   const token = localStorage.getItem('access_token');
@@ -13,7 +20,11 @@ async function apiRequest(endpoint, options = {}) {
   const config = { ...options, headers };
 
   try {
-    const response = await fetch(`${API_BASE}${endpoint}`, config);
+    const response = await Promise.race([
+      fetch(`${API_BASE}${endpoint}`, config),
+      withTimeout(API_TIMEOUT),
+    ]);
+
     const contentType = response.headers.get('content-type');
 
     if (response.status === 204) return null;
@@ -43,7 +54,7 @@ function handleUnauthorized() {
   localStorage.removeItem('access_token');
   localStorage.removeItem('user');
   App.toast('Session expired. Please login again.', 'error');
-  setTimeout(() => { window.location.hash = '#login'; }, 1500);
+  setTimeout(() => { location.reload(); }, 1500);
 }
 
 const Api = {

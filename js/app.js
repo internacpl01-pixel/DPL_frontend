@@ -224,51 +224,80 @@ const App = (() => {
     }
 
     async function loadDashboard(container) {
+        const cachedUser = Auth.getStoredUser();
+        const cachedLevel = cachedUser ? (cachedUser.access_level ?? cachedUser.level ?? 0) : 0;
+        const cachedLevelName = LEVEL_NAMES[cachedLevel] || 'Unknown';
+        const cachedUsername = cachedUser?.username || 'User';
+
+        container.innerHTML = `
+            <div class="dashboard-cards">
+                <div class="stat-card">
+                    <div class="stat-icon">👤</div>
+                    <div class="stat-info">
+                        <h3>Username</h3>
+                        <p class="stat-value" id="dash-username">Loading...</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">🔑</div>
+                    <div class="stat-info">
+                        <h3>Role</h3>
+                        <p class="stat-value" id="dash-role">Loading...</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-info">
+                        <h3>System</h3>
+                        <p class="stat-value" id="dash-system">Checking...</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <h3>Welcome to DPL Data Bank</h3>
+                <p id="dash-welcome">Connecting to server...</p>
+                <div class="quick-actions">
+                    <p class="section-desc">Quick Actions:</p>
+                    <div class="action-buttons" id="dash-actions">
+                        <a href="#field-mappings" class="btn btn-primary">Manage Field Mappings</a>
+                        <a href="#table-structure" class="btn btn-secondary">View Table Structure</a>
+                        <a href="#change-log" class="btn btn-secondary">View Change Log</a>
+                    </div>
+                </div>
+            </div>
+        `;
+
         try {
             const data = await Api.getMe();
             const userLevel = data.access_level ?? data.level ?? 0;
             const levelName = LEVEL_NAMES[userLevel] || 'Unknown';
+            localStorage.setItem('user', JSON.stringify(data));
 
-            container.innerHTML = `
-                <div class="dashboard-cards">
-                    <div class="stat-card">
-                        <div class="stat-icon">👤</div>
-                        <div class="stat-info">
-                            <h3>Username</h3>
-                            <p class="stat-value">${escapeHtml(data.username)}</p>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">🔑</div>
-                        <div class="stat-info">
-                            <h3>Role</h3>
-                            <p class="stat-value">${escapeHtml(levelName)}</p>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon">📊</div>
-                        <div class="stat-info">
-                            <h3>System</h3>
-                            <p class="stat-value">Online</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="card">
-                    <h3>Welcome to DPL Data Bank</h3>
-                    <p>You are logged in as <strong>${escapeHtml(data.username)}</strong> with <strong>${escapeHtml(levelName)}</strong> access level.</p>
-                    <div class="quick-actions">
-                        <p class="section-desc">Quick Actions:</p>
-                        <div class="action-buttons">
-                            <a href="#field-mappings" class="btn btn-primary">Manage Field Mappings</a>
-                            <a href="#table-structure" class="btn btn-secondary">View Table Structure</a>
-                            ${userLevel >= 1 ? '<a href="#custom-fields" class="btn btn-secondary">Add Custom Field</a>' : ''}
-                            ${userLevel >= 1 ? '<a href="#users" class="btn btn-secondary">Manage Users</a>' : ''}
-                        </div>
-                    </div>
-                </div>
-            `;
+            document.getElementById('dash-username').textContent = data.username;
+            document.getElementById('dash-role').textContent = levelName;
+            document.getElementById('dash-system').textContent = 'Online';
+            document.getElementById('dash-welcome').innerHTML =
+                `You are logged in as <strong>${escapeHtml(data.username)}</strong> with <strong>${escapeHtml(levelName)}</strong> access level.`;
+
+            const actionsEl = document.getElementById('dash-actions');
+            if (actionsEl) {
+                actionsEl.innerHTML = `
+                    <a href="#field-mappings" class="btn btn-primary">Manage Field Mappings</a>
+                    <a href="#table-structure" class="btn btn-secondary">View Table Structure</a>
+                    ${userLevel >= 1 ? '<a href="#custom-fields" class="btn btn-secondary">Add Custom Field</a>' : ''}
+                    ${userLevel >= 1 ? '<a href="#change-log" class="btn btn-secondary">View Change Log</a>' : ''}
+                    ${userLevel >= 1 ? '<a href="#users" class="btn btn-secondary">Manage Users</a>' : ''}
+                `;
+            }
         } catch (err) {
-            container.innerHTML = `<div class="error-state"><h2>Error Loading Dashboard</h2><p>${escapeHtml(err.message)}</p></div>`;
+            // Show cached data with a warning
+            document.getElementById('dash-username').textContent = cachedUsername;
+            document.getElementById('dash-role').textContent = cachedLevelName;
+            document.getElementById('dash-system').textContent = 'Offline';
+            document.getElementById('dash-welcome').innerHTML =
+                `Using cached session. <span style="color:#e53e3e">Cannot connect to server.</span>`;
+
+            toast('Using offline mode. Some features may not work.', 'warning');
         }
     }
 
