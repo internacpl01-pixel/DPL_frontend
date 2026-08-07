@@ -1,6 +1,6 @@
 // ===== USERS MODULE =====
 
-const UsersPage = (() => {
+var UsersPage = (() => {
     const TITLE = "Users";
 
     const LEVEL_NAMES = { 0: "Staff", 1: "Manager", 2: "Admin" };

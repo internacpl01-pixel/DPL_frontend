@@ -1,6 +1,6 @@
 // ===== CUSTOM FIELDS MODULE =====
 
-const CustomFieldPage = (() => {
+var CustomFieldPage = (() => {
     const TITLE = "Add Custom Field";
 
     const VALID_TYPES = ["date", "num", "text"];

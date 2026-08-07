@@ -1,6 +1,6 @@
 // ===== CHANGE LOG MODULE =====
 
-const LogPage = (() => {
+var LogPage = (() => {
     const TITLE = "Change Log";
 
     async function load() {

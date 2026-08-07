@@ -1,6 +1,6 @@
 // ===== FIELD MAPPINGS MODULE =====
 
-const MappingPage = (() => {
+var MappingPage = (() => {
     const TITLE = "Field Mapping Configuration";
 
     function getUserLevel() {
@@ -20,7 +20,7 @@ const MappingPage = (() => {
 
         container.innerHTML = `
             <div class="page-section active" id="section-mapping">
-                <p class="section-desc">Manage field name mappings for data import. No duplicate values allowed across any mapping.</p>
+                <p class="section-desc">Manage field name mappings for data import. All master table fields are listed below. New columns added to the master table will appear automatically.</p>
                 <div class="card">
                     <div class="form-group">
                         <label for="field-select">Select Field</label>
@@ -48,26 +48,51 @@ const MappingPage = (() => {
             </div>
         `;
 
-        let data = [];
+        let mappingData = [];
+        let masterColumns = [];
         try {
-            data = await Api.getFieldMappings();
+            const [mappings, columns] = await Promise.all([
+                Api.getFieldMappings(),
+                Api.getTableStructure(),
+            ]);
+            mappingData = mappings;
+            masterColumns = columns;
         } catch (err) {
             App.handleApiError(err);
             return;
         }
 
         const select = document.getElementById("field-select");
-        data.forEach(item => {
+
+        // Build a lookup: fieldname -> mapping record
+        const mappingMap = {};
+        mappingData.forEach(item => {
+            mappingMap[item.fieldname] = item;
+        });
+
+        // Populate dropdown with ALL master table columns
+        let hasAnyMapping = false;
+        masterColumns.forEach(col => {
+            // Skip internal PK column
+            if (col.column_name === 'id') return;
+
+            const mapping = mappingMap[col.column_name];
+            if (mapping) hasAnyMapping = true;
+
             const opt = document.createElement("option");
-            opt.value = item.fieldname;
-            opt.textContent = `${item.fieldname} — ${item.displayname || item.fieldname}`;
+            opt.value = col.column_name;
+            if (mapping) {
+                opt.textContent = `${col.column_name} — ${mapping.displayname || col.column_name}`;
+            } else {
+                opt.textContent = col.column_name;
+            }
             select.appendChild(opt);
         });
 
-        if (!data.length) {
+        if (!masterColumns.length || !masterColumns.some(c => c.column_name !== 'id')) {
             const empty = document.createElement("div");
             empty.className = "empty-state";
-            empty.textContent = "No field mappings found.";
+            empty.textContent = "No fields found in master table.";
             container.querySelector(".card").appendChild(empty);
             return;
         }
@@ -82,7 +107,7 @@ const MappingPage = (() => {
 
         function isValueUsedElsewhere(value, currentFieldname) {
             const lower = value.toLowerCase();
-            return data.some(item => {
+            return mappingData.some(item => {
                 if (item.fieldname === currentFieldname) return false;
                 return item.mapfields.split(",").some(v => v.trim().toLowerCase() === lower);
             });
@@ -110,7 +135,7 @@ const MappingPage = (() => {
                             await Api.deleteMapfield(fieldname, val);
                             tag.remove();
                             App.toast(`Removed '${val}'`, "success");
-                            const item = data.find(d => d.fieldname === fieldname);
+                            const item = mappingData.find(d => d.fieldname === fieldname);
                             if (item) {
                                 const vals = item.mapfields.split(",").map(s => s.trim()).filter(Boolean);
                                 const idx = vals.indexOf(val);
@@ -130,15 +155,34 @@ const MappingPage = (() => {
             });
         }
 
-        select.addEventListener("change", () => {
+        select.addEventListener("change", async () => {
             const fieldname = select.value;
             if (!fieldname) {
                 editDiv.classList.add("hidden");
                 currentField = "";
                 return;
             }
+
+            // If this column has no mapping yet, create one on the fly
+            if (!mappingMap[fieldname]) {
+                try {
+                    await Api.updateFieldMapping(fieldname, fieldname, "");
+                    App.toast(`Mapping created for '${fieldname}'`, "success");
+                    const newMapping = { fieldname: fieldname, displayname: fieldname, mapfields: "" };
+                    mappingData.push(newMapping);
+                    mappingMap[fieldname] = newMapping;
+
+                    // Update option text
+                    const opt = select.querySelector(`option[value="${fieldname}"]`);
+                    if (opt) opt.textContent = `${fieldname} — ${fieldname}`;
+                } catch (err) {
+                    App.toast(err.message, "error");
+                    return;
+                }
+            }
+
             currentField = fieldname;
-            const item = data.find(d => d.fieldname === fieldname);
+            const item = mappingMap[fieldname];
             if (item) {
                 document.getElementById("edit-displayname").value = item.displayname || "";
                 renderTags(item.mapfields, fieldname);
@@ -153,13 +197,13 @@ const MappingPage = (() => {
                 try {
                     await Api.updateFieldMapping(currentField, displayname, "");
                     App.toast("Display name updated", "success");
+                    const item = mappingMap[currentField];
+                    if (item) {
+                        item.displayname = displayname;
+                    }
                     const opt = select.querySelector(`option[value="${currentField}"]`);
                     if (opt) {
-                        const item = data.find(d => d.fieldname === currentField);
-                        if (item) {
-                            item.displayname = displayname;
-                            opt.textContent = `${currentField} — ${displayname || currentField}`;
-                        }
+                        opt.textContent = `${currentField} — ${displayname || currentField}`;
                     }
                 } catch (err) {
                     App.toast(err.message, "error");

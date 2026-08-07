@@ -1,6 +1,6 @@
 // ===== TABLE STRUCTURE MODULE =====
 
-const TablePage = (() => {
+var TablePage = (() => {
     const TITLE = "Table Structure";
 
     async function load() {
