@@ -25,7 +25,7 @@ function renderSidebar(activePage) {
 
   const user = getCurrentUser();
   const levelNames = ['Staff', 'Manager', 'Admin'];
-  const userLevel = user ? user.access_level : 0;
+  const userLevel = user ? (user.access_level ?? user.level ?? 0) : 0;
 
   sidebar.innerHTML = `
     <div class="sidebar-brand">
