@@ -11,26 +11,25 @@ const UsersPage = (() => {
         return Auth.getStoredUser();
     }
 
+    function getCurrentLevel() {
+        const u = Auth.getStoredUser();
+        return u ? (u.access_level ?? u.level ?? 0) : 0;
+    }
+
     function canCreateLevel(level) {
-        const user = getCurrentUser();
-        if (!user) return false;
-        return (LEVEL_CAN_CREATE[user.level] || []).includes(level);
+        return (LEVEL_CAN_CREATE[getCurrentLevel()] || []).includes(level);
     }
 
     function canEditTarget(targetLevel) {
-        const user = getCurrentUser();
-        if (!user) return false;
-        return (LEVEL_CAN_EDIT[user.level] || []).includes(targetLevel);
+        return (LEVEL_CAN_EDIT[getCurrentLevel()] || []).includes(targetLevel);
     }
 
     function isAdmin() {
-        const user = getCurrentUser();
-        return user && user.level === 2;
+        return getCurrentLevel() === 2;
     }
 
     function isManagerOrAbove() {
-        const user = getCurrentUser();
-        return user && user.level >= 1;
+        return getCurrentLevel() >= 1;
     }
 
     async function load() {
@@ -82,9 +81,7 @@ const UsersPage = (() => {
     }
 
     function buildLevelOptions() {
-        const user = getCurrentUser();
-        if (!user) return "";
-        const allowed = LEVEL_CAN_CREATE[user.level] || [];
+        const allowed = LEVEL_CAN_CREATE[getCurrentLevel()] || [];
         let html = "";
         if (allowed.includes(2)) html += `<option value="2">Admin</option>`;
         if (allowed.includes(1)) html += `<option value="1">Manager</option>`;
@@ -97,7 +94,7 @@ const UsersPage = (() => {
         if (!box) return;
 
         try {
-            const data = await Api.get("/users");
+            const data = await Api.getUsers();
             if (!data.length) {
                 box.innerHTML = App.emptyState("No users found.");
                 return;
@@ -113,16 +110,18 @@ const UsersPage = (() => {
 
             data.forEach(item => {
                 const isSelf = String(item.id) === String(currentUser.id);
-                const canEdit = !isSelf && canEditTarget(item.user_level);
+                const itemLevel = item.user_level;
+                const canEdit = !isSelf && canEditTarget(itemLevel);
+                const itemLevelName = item.level_name;
                 html += `<tr>
                     <td>${item.id}</td>
                     <td><strong>${App.escapeHtml(item.username)}</strong>${isSelf ? " (you)" : ""}</td>
-                    <td><span class="badge badge-${item.level_name.toLowerCase()}">${App.escapeHtml(item.level_name)}</span></td>
-                    <td>${App.escapeHtml(item.created_at)}</td>
+                    <td><span class="badge badge-${itemLevelName.toLowerCase()}">${App.escapeHtml(itemLevelName)}</span></td>
+                    <td>${App.escapeHtml(item.created_at || '')}</td>
                     <td class="actions">
                         ${canEdit ? `
                             <button class="btn btn-secondary btn-sm" data-action="edit" data-id="${item.id}">Edit</button>
-                            <button class="btn btn-secondary btn-sm" data-action="level" data-id="${item.id}" data-level="${item.user_level}">Level</button>
+                            <button class="btn btn-secondary btn-sm" data-action="level" data-id="${item.id}" data-level="${itemLevel}">Level</button>
                             <button class="btn btn-danger btn-sm" data-action="delete" data-id="${item.id}" data-name="${App.escapeHtml(item.username)}">Delete</button>
                         ` : `<span style="color:#aaa;font-size:13px;">--</span>`}
                     </td>
@@ -132,7 +131,6 @@ const UsersPage = (() => {
             html += `</tbody></table></div>`;
             box.innerHTML = html;
 
-            // Bind action buttons
             box.querySelectorAll("[data-action='edit']").forEach(btn => {
                 btn.addEventListener("click", () => openEditModal(parseInt(btn.dataset.id)));
             });
@@ -171,7 +169,7 @@ const UsersPage = (() => {
         }
 
         try {
-            await Api.post("/users", { username, password, level });
+            await Api.createUser(username, password, level);
             App.toast(`User '${username}' created successfully`, "success");
             document.getElementById("add-user-form").reset();
             await loadUsersList();
@@ -181,20 +179,16 @@ const UsersPage = (() => {
     }
 
     async function openEditModal(userId) {
-        // Fetch current user data from the already-loaded list
         try {
-            const users = await Api.get("/users");
+            const users = await Api.getUsers();
             const target = users.find(u => u.id === userId);
-            if (!target) {
-                App.toast("User not found", "error");
-                return;
-            }
-            if (!canEditTarget(target.user_level)) {
+            if (!target) { App.toast("User not found", "error"); return; }
+
+            const targetLevel = target.user_level;
+            if (!canEditTarget(targetLevel)) {
                 App.toast("You do not have permission to edit this user", "error");
                 return;
             }
-
-            const isAdmin_ = isAdmin();
 
             App.showModal(
                 "Edit User",
@@ -244,7 +238,7 @@ const UsersPage = (() => {
                     if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = "Saving..."; }
 
                     try {
-                        await Api.patch(`/users/${userId}`, body);
+                        await Api.patchUser(userId, body);
                         App.closeModal();
                         App.toast("User updated successfully", "success");
                         await loadUsersList();
@@ -272,7 +266,7 @@ const UsersPage = (() => {
             async (action) => {
                 if (action !== "confirm") return;
                 try {
-                    await Api.delete(`/users/${userId}`);
+                    await Api.deleteUser(userId);
                     App.closeModal();
                     App.toast(`User '${username}' deleted`, "success");
                     await loadUsersList();
@@ -309,7 +303,7 @@ const UsersPage = (() => {
                 if (action !== "save") return;
                 const newLevel = parseInt(document.getElementById("level-select").value, 10);
                 try {
-                    await Api.put(`/users/${userId}/level`, { level: newLevel });
+                    await Api.updateUserLevel(userId, newLevel);
                     App.closeModal();
                     App.toast(`User level updated to ${LEVEL_NAMES[newLevel]}`, "success");
                     await loadUsersList();

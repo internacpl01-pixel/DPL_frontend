@@ -48,7 +48,7 @@ const CustomFieldPage = (() => {
             btn.textContent = "Adding...";
 
             try {
-                const res = await Api.post("/custom-fields", { type });
+                const res = await Api.createCustomField(type);
                 App.toast(`Column '${res.column}' (${res.type}) added successfully`, "success");
                 e.target.reset();
             } catch (err) {

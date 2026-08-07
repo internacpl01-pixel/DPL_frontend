@@ -17,7 +17,7 @@ const LogPage = (() => {
 
         let data = [];
         try {
-            data = await Api.get("/change-log");
+            data = await Api.getChangeLog();
         } catch (err) {
             App.handleApiError(err);
             return;

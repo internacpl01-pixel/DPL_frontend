@@ -20,7 +20,7 @@ const TablePage = (() => {
 
         let data = [];
         try {
-            data = await Api.get("/table-structure");
+            data = await Api.getTableStructure();
         } catch (err) {
             App.handleApiError(err);
             return;
