@@ -110,7 +110,6 @@ const MappingPage = (() => {
                             await Api.deleteMapfield(fieldname, val);
                             tag.remove();
                             App.toast(`Removed '${val}'`, "success");
-                            // Refresh local data
                             const item = data.find(d => d.fieldname === fieldname);
                             if (item) {
                                 const vals = item.mapfields.split(",").map(s => s.trim()).filter(Boolean);
@@ -147,15 +146,13 @@ const MappingPage = (() => {
             }
         });
 
-        // Display name save button
         if (btnSaveDisplay) {
             btnSaveDisplay.addEventListener("click", async () => {
                 if (!currentField) { App.toast("Select a field first", "warning"); return; }
                 const displayname = document.getElementById("edit-displayname").value.trim();
                 try {
-                    const result = await Api.updateFieldMapping(currentField, displayname, "");
+                    await Api.updateFieldMapping(currentField, displayname, "");
                     App.toast("Display name updated", "success");
-                    // Update dropdown label
                     const opt = select.querySelector(`option[value="${currentField}"]`);
                     if (opt) {
                         const item = data.find(d => d.fieldname === currentField);
@@ -170,21 +167,18 @@ const MappingPage = (() => {
             });
         }
 
-        // Add mapfield button
         if (btnAdd && inputNew) {
             btnAdd.addEventListener("click", async () => {
                 const newVal = inputNew.value.trim();
                 if (!newVal) return;
                 if (!currentField) { App.toast("Select a field first", "warning"); return; }
 
-                // Check duplicate within current row
                 const existingValues = [...tagsContainer.querySelectorAll(".tag")].map(t => t.dataset.value);
                 if (existingValues.some(v => v.toLowerCase() === newVal.toLowerCase())) {
                     App.toast(`'${newVal}' already exists in this mapping`, "error");
                     return;
                 }
 
-                // Check duplicate across other rows
                 if (isValueUsedElsewhere(newVal, currentField)) {
                     App.toast(`'${newVal}' is already used in another mapping`, "error");
                     return;
@@ -193,7 +187,6 @@ const MappingPage = (() => {
                 inputNew.value = "";
                 try {
                     await Api.updateFieldMapping(currentField, "", newVal);
-                    // Add tag to UI
                     const tag = document.createElement("span");
                     tag.className = "tag";
                     tag.dataset.value = newVal;
@@ -222,5 +215,5 @@ const MappingPage = (() => {
         }
     }
 
-    return { load, TITLE };
+    return { load };
 })();

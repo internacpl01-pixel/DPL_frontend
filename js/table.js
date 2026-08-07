@@ -9,10 +9,9 @@ const TablePage = (() => {
         const container = document.getElementById("page-content");
         container.innerHTML = `
             <div class="page-section active" id="section-table-structure">
-                
                 <p class="section-desc">Columns of the master table.</p>
-                <div id="table-search-wrapper">
-                    <input type="text" id="table-search" class="search-input" placeholder="Search columns...">
+                <div class="search-box">
+                    <input type="text" id="table-search" class="form-control" placeholder="Search columns...">
                 </div>
                 <div id="table-info">${App.spinner()}</div>
             </div>
@@ -73,5 +72,5 @@ const TablePage = (() => {
         });
     }
 
-    return { load, TITLE };
+    return { load };
 })();

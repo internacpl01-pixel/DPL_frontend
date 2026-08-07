@@ -9,7 +9,6 @@ const LogPage = (() => {
         const container = document.getElementById("page-content");
         container.innerHTML = `
             <div class="page-section active" id="section-change-log">
-                
                 <p class="section-desc">Record of all field mapping changes. Newest first.</p>
                 <div id="log-list">${App.spinner()}</div>
             </div>
@@ -50,5 +49,5 @@ const LogPage = (() => {
         box.innerHTML = html;
     }
 
-    return { load, TITLE };
+    return { load };
 })();

@@ -185,19 +185,19 @@ const App = (() => {
                 await loadDashboard(container);
                 break;
             case 'field-mappings':
-                await loadModulePage('./mapping.js', container);
+                await loadGlobalModule('MappingPage', container);
                 break;
             case 'table-structure':
-                await loadModulePage('./table.js', container);
+                await loadGlobalModule('TablePage', container);
                 break;
             case 'change-log':
-                await loadModulePage('./logs.js', container);
+                await loadGlobalModule('LogPage', container);
                 break;
             case 'custom-fields':
-                await loadModulePage('./customfields.js', container);
+                await loadGlobalModule('CustomFieldPage', container);
                 break;
             case 'users':
-                await loadModulePage('./users.js', container);
+                await loadGlobalModule('UsersPage', container);
                 break;
             case 'register':
                 showRegisterPage(container);
@@ -207,17 +207,22 @@ const App = (() => {
         }
     }
 
-    async function loadModulePage(modulePath, container) {
+    async function loadGlobalModule(globalName, container) {
         container.innerHTML = spinner();
         try {
-            const module = await import(modulePath);
+            const module = window[globalName];
             if (module && module.load) {
                 await module.load();
+            } else {
+                container.innerHTML = `<div class="empty-state"><p>Module error: '${globalName}' not loaded. Check that the script loaded correctly.</p></div>`;
             }
         } catch (err) {
+            console.error(`Failed to load module ${globalName}:`, err);
             container.innerHTML = `<div class="error-state">
-                <h2>Error Loading Page</h2>
-                <p>${escapeHtml(err.message)}</p>
+                <h2>Page Load Error</h2>
+                <p><strong>${escapeHtml(globalName)}</strong></p>
+                <p style="color:#666">${escapeHtml(err.message)}</p>
+                <p style="color:#888; font-size:0.85em">Check browser console (F12) for details.</p>
                 <button class="btn btn-primary" onclick="location.reload()">Retry</button>
             </div>`;
         }
