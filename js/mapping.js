@@ -105,14 +105,6 @@ var MappingPage = (() => {
 
         let currentField = "";
 
-        function isValueUsedElsewhere(value, currentFieldname) {
-            const lower = value.toLowerCase();
-            return mappingData.some(item => {
-                if (item.fieldname === currentFieldname) return false;
-                return item.mapfields.split(",").some(v => v.trim().toLowerCase() === lower);
-            });
-        }
-
         function renderTags(mapfieldsStr, fieldname) {
             tagsContainer.innerHTML = "";
             if (!mapfieldsStr) return;
@@ -220,11 +212,6 @@ var MappingPage = (() => {
                 const existingValues = [...tagsContainer.querySelectorAll(".tag")].map(t => t.dataset.value);
                 if (existingValues.some(v => v.toLowerCase() === newVal.toLowerCase())) {
                     App.toast(`'${newVal}' already exists in this mapping`, "error");
-                    return;
-                }
-
-                if (isValueUsedElsewhere(newVal, currentField)) {
-                    App.toast(`'${newVal}' is already used in another mapping`, "error");
                     return;
                 }
 
