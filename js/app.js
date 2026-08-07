@@ -103,6 +103,7 @@ const App = (() => {
         document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
         const dash = document.getElementById("dashboard-page");
         if (dash) dash.classList.add("active");
+        setTitle("Dashboard");
     }
 
     function closeSidebar() {
