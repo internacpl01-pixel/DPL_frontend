@@ -81,7 +81,7 @@ const Api = {
   },
 
   register: (username, password, accessLevel) =>
-    apiRequest('/api/register', { method: 'POST', body: JSON.stringify({ username, password, access_level: parseInt(accessLevel) }) }),
+    apiRequest('/api/register', { method: 'POST', body: JSON.stringify({ username, password, level: parseInt(accessLevel) }) }),
 
   logout: () => apiRequest('/api/logout', { method: 'POST' }).catch(() => {}),
 
@@ -109,6 +109,7 @@ const Api = {
   uploadPdf: (file) => {
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('save', 'true');
     const token = localStorage.getItem('access_token');
     const headers = {};
     if (token) headers['Authorization'] = `Bearer ${token}`;
@@ -117,7 +118,7 @@ const Api = {
       headers,
       body: formData,
     }).then(res => {
-      if (!res.ok) return res.json().then(err => { const e = new Error(err.error || 'Upload failed'); e.status = res.status; throw e; });
+      if (!res.ok) return res.json().then(err => { const e = new Error(err.detail || err.error || err.message || 'Upload failed'); e.status = res.status; throw e; });
       return res.json();
     });
   },

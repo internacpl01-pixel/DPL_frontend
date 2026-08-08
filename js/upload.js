@@ -68,17 +68,16 @@ var UploadPage = (() => {
             // Show result
             resultCard.style.display = "block";
             resultBody.innerHTML = `
-                <p><strong>File:</strong> ${App.escapeHtml(result.filename || file.name)}</p>
+                <p><strong>File:</strong> ${App.escapeHtml(file.name)}</p>
                 <p><strong>Bank:</strong> ${App.escapeHtml(result.bank || "Unknown")}</p>
-                <p><strong>Rows Read:</strong> ${result.rows_read}</p>
-                <p><strong>Rows Imported:</strong> ${result.rows_imported}</p>
-                <p style="color:#666; margin-top:12px;">${App.escapeHtml(result.message || "")}</p>
+                <p><strong>Rows Read:</strong> ${result.row_count}</p>
+                <p><strong>Rows Imported:</strong> ${result.inserted}</p>
                 <a href="#data" class="btn btn-secondary" style="margin-top:12px;">View Master Data</a>
             `;
 
-            if (result.rows_imported > 0) {
-                App.toast(`Imported ${result.rows_imported} rows from ${result.bank}`, "success");
-            } else if (result.rows_read === 0) {
+            if (result.inserted > 0) {
+                App.toast(`Imported ${result.inserted} rows from ${result.bank}`, "success");
+            } else if (result.row_count === 0) {
                 App.toast("No transaction rows could be extracted from this PDF.", "warning");
             }
 
