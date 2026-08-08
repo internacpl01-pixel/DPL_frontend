@@ -53,9 +53,10 @@ var UploadPage = (() => {
         }
 
         const btn = document.getElementById("btn-upload");
+        const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
         const originalText = btn.textContent;
         btn.disabled = true;
-        btn.textContent = "Parsing PDF... (may take 30+ seconds for large files)";
+        btn.textContent = `Parsing PDF (${sizeMB} MB)... please wait`;
 
         const resultCard = document.getElementById("upload-result");
         const resultBody = document.getElementById("upload-result-body");
