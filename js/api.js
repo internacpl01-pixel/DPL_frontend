@@ -105,6 +105,30 @@ const Api = {
   createCustomField: (field_type) =>
     apiRequest('/api/custom-fields', { method: 'POST', body: JSON.stringify({ type: field_type }) }),
 
+  // PDF Upload
+  uploadPdf: (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const token = localStorage.getItem('access_token');
+    const headers = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    return fetch(`${API_BASE}/api/import/pdf`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    }).then(res => {
+      if (!res.ok) return res.json().then(err => { const e = new Error(err.error || 'Upload failed'); e.status = res.status; throw e; });
+      return res.json();
+    });
+  },
+
+  // Master Data
+  getData: (page, limit) => apiRequest(`/api/data?page=${page || 1}&limit=${limit || 50}`),
+  addData: (rows) =>
+    apiRequest('/api/data', { method: 'POST', body: JSON.stringify({ rows }) }),
+  deleteData: (id) =>
+    apiRequest(`/api/data/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+
   getUsers: () => apiRequest('/api/users'),
   createUser: (username, password, level) =>
     apiRequest('/api/users', { method: 'POST', body: JSON.stringify({ username, password, level }) }),

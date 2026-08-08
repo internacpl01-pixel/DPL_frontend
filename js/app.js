@@ -11,6 +11,8 @@ const App = (() => {
         { id: 4, label: "Change Log", section: "change-log", minLevel: 1, icon: "📒" },
         { id: 5, label: "Custom Fields", section: "custom-fields", minLevel: 1, icon: "➕" },
         { id: 6, label: "Users", section: "users", minLevel: 1, icon: "👥" },
+        { id: 7, label: "Bank Statements", section: "import", minLevel: 0, icon: "📥" },
+        { id: 8, label: "Master Data", section: "data", minLevel: 0, icon: "📋" },
     ];
 
     const LEVEL_NAMES = { 0: "Staff", 1: "Manager", 2: "Admin" };
@@ -195,6 +197,12 @@ const App = (() => {
                 break;
             case 'custom-fields':
                 await loadGlobalModule('CustomFieldPage', container);
+                break;
+            case 'import':
+                await loadGlobalModule('UploadPage', container);
+                break;
+            case 'data':
+                await loadGlobalModule('DataPage', container);
                 break;
             case 'users':
                 await loadGlobalModule('UsersPage', container);
