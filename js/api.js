@@ -35,7 +35,16 @@ async function apiRequest(endpoint, options = {}) {
 
     if (!response.ok) {
       if (response.status === 401) handleUnauthorized();
-      const msg = typeof data === 'string' ? data : (data.detail || data.message || `HTTP ${response.status}`);
+      let msg = `HTTP ${response.status}`;
+      try {
+        const parsed = contentType && contentType.includes('application/json')
+          ? await response.json()
+          : await response.text();
+        if (typeof parsed === 'string') msg = parsed;
+        else msg = parsed.detail || parsed.message || parsed.error || `HTTP ${response.status}`;
+      } catch (e) {
+        // Non-JSON error body — keep generic message
+      }
       const err = new Error(msg);
       err.status = response.status;
       throw err;
@@ -45,6 +54,9 @@ async function apiRequest(endpoint, options = {}) {
   } catch (err) {
     if (err.name === 'TypeError' && err.message === 'Failed to fetch') {
       throw new Error('Cannot connect to server. Please check your internet connection.');
+    }
+    if (err.status === 500) {
+      throw new Error(`Server error (500). The server may be starting up — try again in a moment.`);
     }
     throw err;
   }
