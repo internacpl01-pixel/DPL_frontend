@@ -47,9 +47,14 @@ const Auth = {
   },
 
   async fetchMe() {
-    const user = await Api.getMe();
-    localStorage.setItem('user', JSON.stringify(user));
-    return user;
+    try {
+      const user = await Api.getMe();
+      localStorage.setItem('user', JSON.stringify(user));
+      return user;
+    } catch (err) {
+      await this.logout();
+      throw err;
+    }
   },
 };
 

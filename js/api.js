@@ -1,13 +1,8 @@
 // ===== API Client =====
 
-// Use the same origin as the page, with a port-aware fallback for local dev.
-const ORIGIN = window.location.origin;
-const LOCAL_FALLBACK = 'http://localhost:5000';
-const API_BASE =
-  (ORIGIN === 'null' || ORIGIN === '' || ORIGIN.startsWith('file://'))
-    ? LOCAL_FALLBACK
-    : ORIGIN;
-const API_TIMEOUT = 60000; // 60 seconds — Render free tier cold start
+// Use config.js API_BASE_URL if defined, fallback to same-origin with local dev port.
+const API_BASE = (typeof API_BASE_URL !== 'undefined' && API_BASE_URL) || window.location.origin;
+const API_TIMEOUT = 60000; // 60 seconds
 
 function withTimeout(ms) {
     return new Promise((_, reject) =>
@@ -128,12 +123,8 @@ const Api = {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('save', 'true');
-    const token = localStorage.getItem('access_token');
-    const headers = {};
-    if (token) headers['Authorization'] = `Bearer ${token}`;
     return fetch(`${API_BASE}/api/import/pdf`, {
       method: 'POST',
-      headers,
       body: formData,
     }).then(res => {
       if (!res.ok) return res.json().then(err => { const e = new Error(err.detail || err.error || err.message || 'Upload failed'); e.status = res.status; throw e; });
