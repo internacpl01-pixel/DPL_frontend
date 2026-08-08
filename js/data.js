@@ -65,8 +65,7 @@ var DataPage = (() => {
             // Build table
             let html = `<div style="overflow-x:auto;">
                 <table class="data-table">
-                    <thead><tr>
-                        <th>ID</th>`;
+                    <thead><tr>`;
 
             allColumns.forEach(col => {
                 html += `<th>${App.escapeHtml(col.name)}</th>`;
@@ -84,7 +83,6 @@ var DataPage = (() => {
                 if (!matches) return;
 
                 html += `<tr data-id="${rowId}">`;
-                html += `<td>${rowId}</td>`;
 
                 allColumns.forEach(col => {
                     const val = row[col.name] || "";

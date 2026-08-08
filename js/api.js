@@ -1,6 +1,12 @@
 // ===== API Client =====
 
-const API_BASE = 'https://dpl-project.onrender.com';
+// Use the same origin as the page, with a port-aware fallback for local dev.
+const ORIGIN = window.location.origin;
+const LOCAL_FALLBACK = 'http://localhost:5000';
+const API_BASE =
+  (ORIGIN === 'null' || ORIGIN === '' || ORIGIN.startsWith('file://'))
+    ? LOCAL_FALLBACK
+    : ORIGIN;
 const API_TIMEOUT = 60000; // 60 seconds — Render free tier cold start
 
 function withTimeout(ms) {
