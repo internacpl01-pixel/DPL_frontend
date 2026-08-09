@@ -15,8 +15,11 @@ var DataPage = (() => {
         const container = document.getElementById("page-content");
         container.innerHTML = `
             <div class="page-section active" id="section-data">
-                <div class="search-box" style="margin-bottom:12px;">
-                    <input type="text" id="data-search" class="form-control" placeholder="Search all columns...">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                    <div class="search-box" style="flex:1; margin-right:12px;">
+                        <input type="text" id="data-search" class="form-control" placeholder="Search all columns...">
+                    </div>
+                    <button class="btn btn-danger btn-sm" id="btn-truncate">Truncate All Data</button>
                 </div>
                 <div id="data-table-area">
                     <div id="data-info">${App.spinner()}</div>
@@ -137,6 +140,14 @@ var DataPage = (() => {
                 });
             });
 
+            // Wire up truncate button
+            const truncateBtn = document.getElementById("btn-truncate");
+            if (truncateBtn) {
+                truncateBtn.addEventListener("click", () => {
+                    openTruncateConfirm();
+                });
+            }
+
             // Wire up delete buttons
             document.querySelectorAll("[data-action='delete']").forEach(btn => {
                 btn.addEventListener("click", () => {
@@ -170,6 +181,30 @@ var DataPage = (() => {
                     if (currentPage > 1 && currentPage === totalPages) {
                         currentPage--;
                     }
+                    loadData();
+                } catch (err) {
+                    App.toast(err.message, "error");
+                }
+            }
+        );
+    }
+
+    function openTruncateConfirm() {
+        App.showModal(
+            "Truncate All Data",
+            `<p style="color:#dc3545;font-size:15px;"><strong>This will permanently delete ALL data from the master table.</strong></p>
+             <p style="color:#dc3545;font-size:13px;">This action cannot be undone.</p>`,
+            [
+                { text: "Cancel", class: "btn-secondary", action: "cancel" },
+                { text: "Truncate All", class: "btn-danger", action: "confirm" },
+            ],
+            async (action) => {
+                if (action !== "confirm") return;
+                try {
+                    await Api.truncateData();
+                    App.closeModal();
+                    App.toast("All data has been deleted", "success");
+                    currentPage = 1;
                     loadData();
                 } catch (err) {
                     App.toast(err.message, "error");

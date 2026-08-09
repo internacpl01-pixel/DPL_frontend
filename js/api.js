@@ -146,6 +146,8 @@ const Api = {
     apiRequest('/api/data', { method: 'POST', body: JSON.stringify({ rows }) }),
   deleteData: (id) =>
     apiRequest(`/api/data/${encodeURIComponent(id)}`, { method: 'DELETE' }),
+  truncateData: () =>
+    apiRequest('/api/data', { method: 'DELETE' }),
 
   getUsers: () => apiRequest('/api/users'),
   createUser: (username, password, level) =>
