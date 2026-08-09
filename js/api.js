@@ -3,11 +3,18 @@
 // Use config.js API_BASE_URL if defined, fallback to same-origin with local dev port.
 const API_BASE = (typeof API_BASE_URL !== 'undefined' && API_BASE_URL) || window.location.origin;
 const API_TIMEOUT = 60000; // 60 seconds
+const PDF_UPLOAD_TIMEOUT = 180000; // 180 seconds — PDF parsing can be slow
 
-function withTimeout(ms) {
-    return new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Request timed out. Please try again.')), ms)
-    );
+function withTimeout(ms, signal) {
+  return new Promise((_, reject) => {
+    const id = setTimeout(() => reject(new Error('Request timed out. Please try again.')), ms);
+    if (signal) {
+      signal.addEventListener('abort', () => {
+        clearTimeout(id);
+        reject(new Error('Request was cancelled.'));
+      }, { once: true });
+    }
+  });
 }
 
 async function apiRequest(endpoint, options = {}) {
@@ -18,12 +25,19 @@ async function apiRequest(endpoint, options = {}) {
     ...options.headers,
   };
 
-  const config = { ...options, headers };
+  // Don't set Content-Type for FormData — browser sets multipart boundary
+  const body = options.body;
+  if (body instanceof FormData) {
+    delete headers['Content-Type'];
+  }
+
+  const timeout = options.timeout || API_TIMEOUT;
+  const config = { ...options, headers, body };
 
   try {
     const response = await Promise.race([
       fetch(`${API_BASE}${endpoint}`, config),
-      withTimeout(API_TIMEOUT),
+      withTimeout(timeout),
     ]);
 
     const contentType = response.headers.get('content-type');
@@ -123,13 +137,7 @@ const Api = {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('save', 'true');
-    return fetch(`${API_BASE}/api/import/pdf`, {
-      method: 'POST',
-      body: formData,
-    }).then(res => {
-      if (!res.ok) return res.json().then(err => { const e = new Error(err.detail || err.error || err.message || 'Upload failed'); e.status = res.status; throw e; });
-      return res.json();
-    });
+    return apiRequest('/api/import/pdf', { method: 'POST', body: formData, timeout: PDF_UPLOAD_TIMEOUT });
   },
 
   // Master Data
