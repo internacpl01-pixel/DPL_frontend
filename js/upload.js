@@ -83,7 +83,7 @@ var UploadPage = (() => {
             }
 
             // Reset form
-            form.reset();
+            document.getElementById("pdf-upload-form").reset();
         } catch (err) {
             resultCard.style.display = "block";
             resultBody.innerHTML = `
