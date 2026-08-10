@@ -2,6 +2,7 @@
 
 var UploadPage = (() => {
     const TITLE = "Bank Statements";
+    let pendingFile = null;  // holds the file while waiting for password
 
     async function load() {
         App.setTitle(TITLE);
@@ -37,6 +38,103 @@ var UploadPage = (() => {
         form.addEventListener("submit", handleUpload);
     }
 
+    function showPasswordPrompt(file, message) {
+        const resultCard = document.getElementById("upload-result");
+        const resultBody = document.getElementById("upload-result-body");
+        resultCard.style.display = "block";
+        resultBody.innerHTML = `
+            <p style="color:#d68910; font-size:14px; margin-bottom:10px;"><strong>${App.escapeHtml(message)}</strong></p>
+            <div class="form-group">
+                <label for="pdf-password">Enter PDF Password</label>
+                <input type="password" id="pdf-password" class="form-control" placeholder="Enter password to unlock PDF" autofocus>
+            </div>
+            <button class="btn btn-primary" id="btn-password-submit">Submit Password</button>
+            <button class="btn btn-secondary" id="btn-password-cancel" style="margin-left:8px;">Cancel</button>
+        `;
+
+        document.getElementById("btn-password-submit").addEventListener("click", async () => {
+            const pw = document.getElementById("pdf-password").value.trim();
+            if (!pw) {
+                App.toast("Please enter the password", "warning");
+                return;
+            }
+            await submitWithPassword(file, pw);
+        });
+
+        document.getElementById("pdf-password").addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                const pw = e.target.value.trim();
+                if (!pw) {
+                    App.toast("Please enter the password", "warning");
+                    return;
+                }
+                submitWithPassword(file, pw);
+            }
+        });
+
+        document.getElementById("btn-password-cancel").addEventListener("click", () => {
+            resultCard.style.display = "none";
+            resultBody.innerHTML = "";
+            pendingFile = null;
+            document.getElementById("pdf-upload-form").reset();
+        });
+
+        // Focus the password field
+        setTimeout(() => document.getElementById("pdf-password")?.focus(), 100);
+    }
+
+    async function submitWithPassword(file, password) {
+        const btn = document.getElementById("btn-password-submit");
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = "Decrypting and parsing...";
+
+        const resultCard = document.getElementById("upload-result");
+        const resultBody = document.getElementById("upload-result-body");
+        resultBody.innerHTML = `<p>${App.spinner()} Decrypting PDF...</p>`;
+
+        try {
+            const result = await Api.uploadPdf(file, password);
+
+            resultBody.innerHTML = `
+                <p><strong>File:</strong> ${App.escapeHtml(file.name)}</p>
+                <p><strong>Bank:</strong> ${App.escapeHtml(result.bank || "Unknown")}</p>
+                <p><strong>Rows Read:</strong> ${result.row_count}</p>
+                <p><strong>Rows Imported:</strong> ${result.inserted}</p>
+                <a href="#data" class="btn btn-secondary" style="margin-top:12px;">View Master Data</a>
+            `;
+
+            if (result.inserted > 0) {
+                App.toast(`Imported ${result.inserted} rows from ${result.bank}`, "success");
+            } else if (result.row_count === 0) {
+                App.toast("No transaction rows could be extracted from this PDF.", "warning");
+            }
+
+            pendingFile = null;
+            document.getElementById("pdf-upload-form").reset();
+        } catch (err) {
+            if (err.message && err.message.includes("Incorrect password")) {
+                resultBody.innerHTML = `
+                    <p style="color:#dc3545;"><strong>${App.escapeHtml(err.message)}</strong></p>
+                `;
+                App.toast("Incorrect password", "error");
+                // Re-focus the password field
+                setTimeout(() => document.getElementById("pdf-password")?.focus(), 100);
+            } else {
+                resultBody.innerHTML = `
+                    <p style="color:#dc3545;"><strong>Import Failed</strong></p>
+                    <p>${App.escapeHtml(err.message || "Unknown error")}</p>
+                `;
+                App.handleApiError(err);
+                pendingFile = null;
+                document.getElementById("pdf-upload-form").reset();
+            }
+        } finally {
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
+    }
+
     async function handleUpload(e) {
         e.preventDefault();
 
@@ -66,7 +164,6 @@ var UploadPage = (() => {
         try {
             const result = await Api.uploadPdf(file);
 
-            // Show result
             resultCard.style.display = "block";
             resultBody.innerHTML = `
                 <p><strong>File:</strong> ${App.escapeHtml(file.name)}</p>
@@ -82,18 +179,29 @@ var UploadPage = (() => {
                 App.toast("No transaction rows could be extracted from this PDF.", "warning");
             }
 
-            // Reset form
             document.getElementById("pdf-upload-form").reset();
         } catch (err) {
+            // Check if this is an encrypted PDF
+            if (err.message && err.message.includes("ENCRYPTED")) {
+                btn.disabled = false;
+                btn.textContent = originalText;
+                pendingFile = file;
+                showPasswordPrompt(file, err.message);
+                return;
+            }
+
             resultCard.style.display = "block";
             resultBody.innerHTML = `
                 <p style="color:#dc3545;"><strong>Import Failed</strong></p>
                 <p>${App.escapeHtml(err.message || "Unknown error")}</p>
             `;
             App.handleApiError(err);
+            document.getElementById("pdf-upload-form").reset();
         } finally {
-            btn.disabled = false;
-            btn.textContent = originalText;
+            if (!pendingFile) {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
         }
     }
 

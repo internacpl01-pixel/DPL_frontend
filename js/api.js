@@ -133,10 +133,13 @@ const Api = {
     apiRequest('/api/custom-fields', { method: 'POST', body: JSON.stringify({ type: field_type }) }),
 
   // PDF Upload
-  uploadPdf: (file) => {
+  uploadPdf: (file, password) => {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('save', 'true');
+    if (password) {
+      formData.append('password', password);
+    }
     return apiRequest('/api/import/pdf', { method: 'POST', body: formData, timeout: PDF_UPLOAD_TIMEOUT });
   },
 
