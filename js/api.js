@@ -5,18 +5,6 @@ const API_BASE = (typeof API_BASE_URL !== 'undefined' && API_BASE_URL) || window
 const API_TIMEOUT = 60000; // 60 seconds
 const PDF_UPLOAD_TIMEOUT = 180000; // 180 seconds — PDF parsing can be slow
 
-function withTimeout(ms, signal) {
-  return new Promise((_, reject) => {
-    const id = setTimeout(() => reject(new Error('Request timed out. Please try again.')), ms);
-    if (signal) {
-      signal.addEventListener('abort', () => {
-        clearTimeout(id);
-        reject(new Error('Request was cancelled.'));
-      }, { once: true });
-    }
-  });
-}
-
 async function apiRequest(endpoint, options = {}) {
   const token = localStorage.getItem('access_token');
   const headers = {
@@ -34,39 +22,49 @@ async function apiRequest(endpoint, options = {}) {
   const timeout = options.timeout || API_TIMEOUT;
   const config = { ...options, headers, body };
 
+  // Use AbortController for timeout instead of Promise.race
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeout);
+  config.signal = controller.signal;
+
   try {
-    const response = await Promise.race([
-      fetch(`${API_BASE}${endpoint}`, config),
-      withTimeout(timeout),
-    ]);
+    const response = await fetch(`${API_BASE}${endpoint}`, config);
 
+    // Read the body once, before any branching
     const contentType = response.headers.get('content-type');
-
-    if (response.status === 204) return null;
-
-    const data = contentType && contentType.includes('application/json')
-      ? await response.json()
-      : await response.text();
+    let data;
+    if (response.status === 204) {
+      data = null;
+    } else if (contentType && contentType.includes('application/json')) {
+      data = await response.json();
+    } else {
+      data = await response.text();
+    }
 
     if (!response.ok) {
-      if (response.status === 401) handleUnauthorized();
+      if (response.status === 401) {
+        clearTimeout(timer);
+        handleUnauthorized();
+      }
       let msg = `HTTP ${response.status}`;
-      try {
-        const parsed = contentType && contentType.includes('application/json')
-          ? await response.json()
-          : await response.text();
-        if (typeof parsed === 'string') msg = parsed;
-        else msg = parsed.detail || parsed.message || parsed.error || `HTTP ${response.status}`;
-      } catch (e) {
-        // Non-JSON error body — keep generic message
+      if (typeof data === 'string') {
+        msg = data;
+      } else if (data) {
+        msg = data.detail || data.message || data.error || `HTTP ${response.status}`;
       }
       const err = new Error(msg);
       err.status = response.status;
+      clearTimeout(timer);
       throw err;
     }
 
+    clearTimeout(timer);
     return data;
   } catch (err) {
+    clearTimeout(timer);
+    if (err.name === 'AbortError') {
+      throw new Error('Request timed out. Please try again.');
+    }
     if (err.name === 'TypeError' && err.message === 'Failed to fetch') {
       throw new Error('Cannot connect to server. Please check your internet connection.');
     }
@@ -141,6 +139,14 @@ const Api = {
       formData.append('password', password);
     }
     return apiRequest('/api/import/pdf', { method: 'POST', body: formData, timeout: PDF_UPLOAD_TIMEOUT });
+  },
+
+  // Excel Upload
+  uploadExcel: (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('save', 'true');
+    return apiRequest('/api/import/excel', { method: 'POST', body: formData, timeout: PDF_UPLOAD_TIMEOUT });
   },
 
   // Master Data

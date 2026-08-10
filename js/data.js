@@ -8,6 +8,7 @@ var DataPage = (() => {
     let totalPages = 1;
     let allColumns = [];
     let searchTerm = "";
+    let listenersAttached = false;
 
     async function load() {
         App.setTitle(TITLE);
@@ -32,7 +33,38 @@ var DataPage = (() => {
         currentPage = 1;
         allColumns = [];
 
-        document.getElementById("data-search").addEventListener("input", debounceSearch(250));
+        // Attach event listeners once (not on every page change)
+        if (!listenersAttached) {
+            listenersAttached = true;
+
+            // Search (debounced)
+            document.getElementById("data-search").addEventListener("input", debounceSearch(250));
+
+            // Truncate — attached once, survives all loadData() calls
+            document.getElementById("btn-truncate").addEventListener("click", openTruncateConfirm);
+
+            // Delegated clicks for pagination and delete inside the table area
+            const tableArea = document.getElementById("data-table-area");
+            tableArea.addEventListener("click", (e) => {
+                const pagPrev = e.target.closest("#pag-prev");
+                const pagNext = e.target.closest("#pag-next");
+                const pagPage = e.target.closest(".pag-page");
+                const delBtn = e.target.closest("[data-action='delete']");
+
+                if (pagPrev) {
+                    if (currentPage > 1) { currentPage--; loadData(); }
+                } else if (pagNext) {
+                    if (currentPage < totalPages) { currentPage++; loadData(); }
+                } else if (pagPage) {
+                    currentPage = parseInt(pagPage.dataset.page, 10);
+                    loadData();
+                } else if (delBtn) {
+                    const id = parseInt(delBtn.dataset.id, 10);
+                    openDeleteConfirm(id);
+                }
+            });
+        }
+
         await loadData();
     }
 
@@ -100,7 +132,7 @@ var DataPage = (() => {
             html += `</tbody></table></div>`;
             infoEl.innerHTML = html;
 
-            // Pagination
+            // Pagination (rendered, events handled by delegated listener in load())
             let pagHtml = `<span style="margin-right:12px;">Page ${currentPage} of ${totalPages} (${result.total} total)</span>`;
             if (currentPage > 1) {
                 pagHtml += `<button class="btn btn-secondary btn-sm" id="pag-prev">Previous</button> `;
@@ -113,48 +145,6 @@ var DataPage = (() => {
                 pagHtml += `<button class="btn btn-secondary btn-sm" id="pag-next">Next</button>`;
             }
             pagEl.innerHTML = pagHtml;
-
-            // Wire up pagination
-            const prevBtn = document.getElementById("pag-prev");
-            if (prevBtn) {
-                prevBtn.addEventListener("click", () => {
-                    if (currentPage > 1) {
-                        currentPage--;
-                        loadData();
-                    }
-                });
-            }
-            const nextBtn = document.getElementById("pag-next");
-            if (nextBtn) {
-                nextBtn.addEventListener("click", () => {
-                    if (currentPage < totalPages) {
-                        currentPage++;
-                        loadData();
-                    }
-                });
-            }
-            document.querySelectorAll(".pag-page").forEach(btn => {
-                btn.addEventListener("click", () => {
-                    currentPage = parseInt(btn.dataset.page, 10);
-                    loadData();
-                });
-            });
-
-            // Wire up truncate button
-            const truncateBtn = document.getElementById("btn-truncate");
-            if (truncateBtn) {
-                truncateBtn.addEventListener("click", () => {
-                    openTruncateConfirm();
-                });
-            }
-
-            // Wire up delete buttons
-            document.querySelectorAll("[data-action='delete']").forEach(btn => {
-                btn.addEventListener("click", () => {
-                    const id = parseInt(btn.dataset.id, 10);
-                    openDeleteConfirm(id);
-                });
-            });
 
         } catch (err) {
             infoEl.innerHTML = `<p class="error-msg">${App.escapeHtml(err.message)}</p>`;

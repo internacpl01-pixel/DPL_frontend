@@ -11,7 +11,7 @@ var UploadPage = (() => {
         container.innerHTML = `
             <div class="page-section active" id="section-upload">
                 <p class="section-desc">
-                    Upload a PDF bank statement. Transactions will be extracted and appended to the master table.
+                    Upload a PDF bank statement or Excel (.xlsx/.xls) file. Transactions will be extracted and appended to the master table.
                     No duplicate checks are performed — rows are simply added.
                 </p>
 
@@ -19,13 +19,13 @@ var UploadPage = (() => {
                     <h3>Upload PDF</h3>
                     <form id="pdf-upload-form">
                         <div class="form-group">
-                            <label for="pdf-file">Choose PDF file</label>
-                            <input type="file" id="pdf-file" accept="application/pdf,.pdf" required>
-                            <small style="color:#666;">Accepted: PDF only (V1)</small>
+                            <label for="pdf-file">Choose file</label>
+                            <input type="file" id="pdf-file" accept="application/pdf,.pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.xlsx,.xls" required>
+                            <small style="color:#666;">Accepted: PDF or Excel (.xlsx, .xls)</small>
                         </div>
                         <div class="form-group">
-                            <label for="pdf-password">PDF Password (if encrypted)</label>
-                            <input type="password" id="pdf-password" class="form-control" placeholder="Leave blank if not password-protected">
+                            <label for="pdf-password-input">PDF Password (if encrypted)</label>
+                            <input type="password" id="pdf-password-input" class="form-control" placeholder="Leave blank if not password-protected">
                         </div>
                         <button type="submit" id="btn-upload" class="btn btn-primary">Upload and Import</button>
                     </form>
@@ -49,15 +49,15 @@ var UploadPage = (() => {
         resultBody.innerHTML = `
             <p style="color:#d68910; font-size:14px; margin-bottom:10px;"><strong>${App.escapeHtml(message)}</strong></p>
             <div class="form-group">
-                <label for="pdf-password">Enter PDF Password</label>
-                <input type="password" id="pdf-password" class="form-control" placeholder="Enter password to unlock PDF" autofocus>
+                <label for="pdf-password-prompt">Enter PDF Password</label>
+                <input type="password" id="pdf-password-prompt" class="form-control" placeholder="Enter password to unlock PDF" autofocus>
             </div>
             <button class="btn btn-primary" id="btn-password-submit">Submit Password</button>
             <button class="btn btn-secondary" id="btn-password-cancel" style="margin-left:8px;">Cancel</button>
         `;
 
         document.getElementById("btn-password-submit").addEventListener("click", async () => {
-            const pw = document.getElementById("pdf-password").value.trim();
+            const pw = document.getElementById("pdf-password-prompt").value.trim();
             if (!pw) {
                 App.toast("Please enter the password", "warning");
                 return;
@@ -65,7 +65,7 @@ var UploadPage = (() => {
             await submitWithPassword(file, pw);
         });
 
-        document.getElementById("pdf-password").addEventListener("keydown", (e) => {
+        document.getElementById("pdf-password-prompt").addEventListener("keydown", (e) => {
             if (e.key === "Enter") {
                 const pw = e.target.value.trim();
                 if (!pw) {
@@ -84,7 +84,7 @@ var UploadPage = (() => {
         });
 
         // Focus the password field
-        setTimeout(() => document.getElementById("pdf-password")?.focus(), 100);
+        setTimeout(() => document.getElementById("pdf-password-prompt")?.focus(), 100);
     }
 
     async function submitWithPassword(file, password) {
@@ -123,7 +123,7 @@ var UploadPage = (() => {
                 `;
                 App.toast("Incorrect password", "error");
                 // Re-focus the password field
-                setTimeout(() => document.getElementById("pdf-password")?.focus(), 100);
+                setTimeout(() => document.getElementById("pdf-password-prompt")?.focus(), 100);
             } else {
                 resultBody.innerHTML = `
                     <p style="color:#dc3545;"><strong>Import Failed</strong></p>
@@ -149,45 +149,59 @@ var UploadPage = (() => {
             return;
         }
 
-        if (!file.name.toLowerCase().endsWith(".pdf")) {
-            App.toast("Only PDF files are supported", "error");
+        const isExcel = /\.(xlsx|xls)$/i.test(file.name);
+        const isPdf = /\.pdf$/i.test(file.name);
+
+        if (!isExcel && !isPdf) {
+            App.toast("Only PDF or Excel files are supported", "error");
             return;
         }
 
         const btn = document.getElementById("btn-upload");
         const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
         const originalText = btn.textContent;
-        const password = document.getElementById("pdf-password").value.trim();
-        btn.disabled = true;
-        btn.textContent = `Parsing PDF (${sizeMB} MB)... please wait`;
+
+        if (isPdf) {
+            btn.disabled = true;
+            btn.textContent = `Parsing PDF (${sizeMB} MB)... please wait`;
+        } else {
+            btn.disabled = true;
+            btn.textContent = `Reading Excel (${sizeMB} MB)... please wait`;
+        }
 
         const resultCard = document.getElementById("upload-result");
         const resultBody = document.getElementById("upload-result-body");
         resultCard.style.display = "none";
         resultBody.innerHTML = "";
 
+        // Read password from the form's password field
+        const passwordValue = document.getElementById("pdf-password-input")?.value?.trim() || "";
+
         try {
-            const result = await Api.uploadPdf(file, password);
+            const result = isExcel
+                ? await Api.uploadExcel(file)
+                : await Api.uploadPdf(file, passwordValue);
+
+            const bankName = result.bank || (isExcel ? "Excel" : "Unknown");
 
             resultCard.style.display = "block";
             resultBody.innerHTML = `
                 <p><strong>File:</strong> ${App.escapeHtml(file.name)}</p>
-                <p><strong>Bank:</strong> ${App.escapeHtml(result.bank || "Unknown")}</p>
+                <p><strong>Bank:</strong> ${App.escapeHtml(bankName)}</p>
                 <p><strong>Rows Read:</strong> ${result.row_count}</p>
                 <p><strong>Rows Imported:</strong> ${result.inserted}</p>
                 <a href="#data" class="btn btn-secondary" style="margin-top:12px;">View Master Data</a>
             `;
 
             if (result.inserted > 0) {
-                App.toast(`Imported ${result.inserted} rows from ${result.bank}`, "success");
+                App.toast(`Imported ${result.inserted} rows from ${bankName}`, "success");
             } else if (result.row_count === 0) {
-                App.toast("No transaction rows could be extracted from this PDF.", "warning");
+                App.toast("No transaction rows could be extracted.", "warning");
             }
 
             document.getElementById("pdf-upload-form").reset();
         } catch (err) {
-            // Check if this is an encrypted PDF — show password prompt
-            if (err.message && err.message.includes("ENCRYPTED")) {
+            if (isPdf && err.message && err.message.includes("ENCRYPTED")) {
                 btn.disabled = false;
                 btn.textContent = originalText;
                 pendingFile = file;
