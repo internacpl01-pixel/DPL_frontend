@@ -23,6 +23,10 @@ var UploadPage = (() => {
                             <input type="file" id="pdf-file" accept="application/pdf,.pdf" required>
                             <small style="color:#666;">Accepted: PDF only (V1)</small>
                         </div>
+                        <div class="form-group">
+                            <label for="pdf-password">PDF Password (if encrypted)</label>
+                            <input type="password" id="pdf-password" class="form-control" placeholder="Leave blank if not password-protected">
+                        </div>
                         <button type="submit" id="btn-upload" class="btn btn-primary">Upload and Import</button>
                     </form>
                 </div>
@@ -153,6 +157,7 @@ var UploadPage = (() => {
         const btn = document.getElementById("btn-upload");
         const sizeMB = (file.size / (1024 * 1024)).toFixed(1);
         const originalText = btn.textContent;
+        const password = document.getElementById("pdf-password").value.trim();
         btn.disabled = true;
         btn.textContent = `Parsing PDF (${sizeMB} MB)... please wait`;
 
@@ -162,7 +167,7 @@ var UploadPage = (() => {
         resultBody.innerHTML = "";
 
         try {
-            const result = await Api.uploadPdf(file);
+            const result = await Api.uploadPdf(file, password);
 
             resultCard.style.display = "block";
             resultBody.innerHTML = `
@@ -181,7 +186,7 @@ var UploadPage = (() => {
 
             document.getElementById("pdf-upload-form").reset();
         } catch (err) {
-            // Check if this is an encrypted PDF
+            // Check if this is an encrypted PDF — show password prompt
             if (err.message && err.message.includes("ENCRYPTED")) {
                 btn.disabled = false;
                 btn.textContent = originalText;
