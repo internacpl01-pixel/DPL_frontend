@@ -1,6 +1,2 @@
-// Use same-origin by default (works when served by the local backend).
-// Override with the production URL only when opened from file://.
-window.API_BASE_URL =
-  window.location.protocol === 'file:'
-    ? 'https://dpl-project.onrender.com'
-    : window.location.origin;
+// Backend URL — always points to Render (single backend, no local dev mode needed).
+window.API_BASE_URL = 'https://dpl-project.onrender.com';
