@@ -102,14 +102,13 @@ var UploadPage = (() => {
 
             resultBody.innerHTML = `
                 <p><strong>File:</strong> ${App.escapeHtml(file.name)}</p>
-                <p><strong>Bank:</strong> ${App.escapeHtml(result.bank || "Unknown")}</p>
                 <p><strong>Rows Read:</strong> ${result.row_count}</p>
                 <p><strong>Rows Imported:</strong> ${result.inserted}</p>
                 <a href="#data" class="btn btn-secondary" style="margin-top:12px;">View Master Data</a>
             `;
 
             if (result.inserted > 0) {
-                App.toast(`Imported ${result.inserted} rows from ${result.bank}`, "success");
+                App.toast(`Imported ${result.inserted} rows`, "success");
             } else if (result.row_count === 0) {
                 App.toast("No transaction rows could be extracted from this PDF.", "warning");
             }
@@ -182,19 +181,16 @@ var UploadPage = (() => {
                 ? await Api.uploadExcel(file)
                 : await Api.uploadPdf(file, passwordValue);
 
-            const bankName = result.bank || (isExcel ? "Excel" : "Unknown");
-
             resultCard.style.display = "block";
             resultBody.innerHTML = `
                 <p><strong>File:</strong> ${App.escapeHtml(file.name)}</p>
-                <p><strong>Bank:</strong> ${App.escapeHtml(bankName)}</p>
                 <p><strong>Rows Read:</strong> ${result.row_count}</p>
                 <p><strong>Rows Imported:</strong> ${result.inserted}</p>
                 <a href="#data" class="btn btn-secondary" style="margin-top:12px;">View Master Data</a>
             `;
 
             if (result.inserted > 0) {
-                App.toast(`Imported ${result.inserted} rows from ${bankName}`, "success");
+                App.toast(`Imported ${result.inserted} rows`, "success");
             } else if (result.row_count === 0) {
                 App.toast("No transaction rows could be extracted.", "warning");
             }
