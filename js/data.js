@@ -43,9 +43,9 @@ var DataPage = (() => {
             // Truncate — attached once, survives all loadData() calls
             document.getElementById("btn-truncate").addEventListener("click", openTruncateConfirm);
 
-            // Delegated clicks for pagination and delete inside the table area
-            const tableArea = document.getElementById("data-table-area");
-            tableArea.addEventListener("click", (e) => {
+            // Delegated clicks for pagination and delete (container = #page-content)
+            const container = document.getElementById("page-content");
+            container.addEventListener("click", (e) => {
                 const pagPrev = e.target.closest("#pag-prev");
                 const pagNext = e.target.closest("#pag-next");
                 const pagPage = e.target.closest(".pag-page");
@@ -103,7 +103,8 @@ var DataPage = (() => {
                     <thead><tr>`;
 
             allColumns.forEach(col => {
-                html += `<th>${App.escapeHtml(col.name)}</th>`;
+                const headerText = col.displayname && col.displayname !== col.name ? col.displayname : col.name;
+                html += `<th>${App.escapeHtml(headerText)}</th>`;
             });
 
             html += `<th>Actions</th></tr></thead><tbody>`;
