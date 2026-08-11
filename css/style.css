@@ -547,6 +547,7 @@ a:hover {
     border-top-color: #4a90d9;
     border-radius: 50%;
     animation: spin 0.7s linear infinite;
+    will-change: transform;
 }
 
 /* ===== DASHBOARD CARDS ===== */
