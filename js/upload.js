@@ -243,6 +243,16 @@ var UploadPage = (() => {
             <p><strong>Rows Imported:</strong> ${result.inserted}</p>
         `;
 
+        // Document-level fields — values found outside the table (e.g. account number)
+        if (result.document_fields && Object.keys(result.document_fields).length > 0) {
+            html += `<div style="margin-top:10px; padding:8px; background:#d4edda; border-radius:4px;">`;
+            html += `<p style="color:#155724; margin:0;"><strong>Auto-filled from document:</strong> `;
+            html += Object.entries(result.document_fields)
+                .map(([f, v]) => `${App.escapeHtml(f)} = ${App.escapeHtml(v)}`)
+                .join(", ");
+            html += `</p></div>`;
+        }
+
         // Unmapped headers — PDF columns that weren't matched to any field
         if (result.unmapped_headers && result.unmapped_headers.length > 0) {
             html += `<div style="margin-top:10px; padding:8px; background:#fff3cd; border-radius:4px;">`;
