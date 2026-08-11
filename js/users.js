@@ -205,7 +205,6 @@ var UsersPage = (() => {
                 </form>
                 `,
                 [
-                    { text: "Cancel", class: "btn-secondary", action: "cancel" },
                     { text: "Save Changes", class: "btn-primary", action: "save" },
                 ],
                 async (action) => {
@@ -260,7 +259,6 @@ var UsersPage = (() => {
             `<p>Are you sure you want to delete user <strong>${App.escapeHtml(username)}</strong>?</p>
              <p class="text-danger text-sm">This action cannot be undone.</p>`,
             [
-                { text: "Cancel", class: "btn-secondary", action: "cancel" },
                 { text: "Delete", class: "btn-danger", action: "confirm" },
             ],
             async (action) => {
@@ -296,7 +294,6 @@ var UsersPage = (() => {
             </div>
             `,
             [
-                { text: "Cancel", class: "btn-secondary", action: "cancel" },
                 { text: "Update Level", class: "btn-primary", action: "save" },
             ],
             async (action) => {

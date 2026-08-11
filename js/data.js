@@ -33,19 +33,22 @@ var DataPage = (() => {
         currentPage = 1;
         allColumns = [];
 
-        // Attach event listeners once (not on every page change)
+        // Attach event listeners once on the STABLE #page-content container
+        // (it's never replaced — only its innerHTML is). Everything is handled
+        // via delegation matched against e.target, so it keeps working no
+        // matter how many times load() recreates the buttons/input inside it —
+        // a direct listener on #btn-truncate/#data-search would go stale the
+        // moment you navigate away and back, since load() destroys and
+        // recreates those specific elements every time.
         if (!listenersAttached) {
             listenersAttached = true;
 
-            // Search (debounced)
-            document.getElementById("data-search").addEventListener("input", debounceSearch(250));
-
-            // Truncate — attached once, survives all loadData() calls
-            document.getElementById("btn-truncate").addEventListener("click", openTruncateConfirm);
-
-            // Delegated clicks for pagination and delete (container = #page-content)
             const container = document.getElementById("page-content");
+
+            container.addEventListener("input", debounceSearch(250));
+
             container.addEventListener("click", (e) => {
+                const truncateBtn = e.target.closest("#btn-truncate");
                 const pagFirst = e.target.closest("#pag-first");
                 const pagPrev = e.target.closest("#pag-prev");
                 const pagNext = e.target.closest("#pag-next");
@@ -53,7 +56,9 @@ var DataPage = (() => {
                 const pagPage = e.target.closest(".pag-page");
                 const delBtn = e.target.closest("[data-action='delete']");
 
-                if (pagFirst) {
+                if (truncateBtn) {
+                    openTruncateConfirm();
+                } else if (pagFirst) {
                     if (currentPage !== 1) { currentPage = 1; loadData(); }
                 } else if (pagPrev) {
                     if (currentPage > 1) { currentPage--; loadData(); }
@@ -77,6 +82,7 @@ var DataPage = (() => {
     function debounceSearch(ms) {
         let timer;
         return (e) => {
+            if (e.target.id !== "data-search") return;
             clearTimeout(timer);
             timer = setTimeout(() => {
                 searchTerm = e.target.value.trim().toLowerCase();
@@ -179,7 +185,6 @@ var DataPage = (() => {
             `<p>Are you sure you want to delete row <strong>${rowId}</strong>?</p>
              <p class="text-danger text-sm">This action cannot be undone.</p>`,
             [
-                { text: "Cancel", class: "btn-secondary", action: "cancel" },
                 { text: "Delete", class: "btn-danger", action: "confirm" },
             ],
             async (action) => {
@@ -206,7 +211,6 @@ var DataPage = (() => {
             `<p class="text-danger"><strong>This will permanently delete ALL data from the master table.</strong></p>
              <p class="text-danger text-sm">This action cannot be undone.</p>`,
             [
-                { text: "Cancel", class: "btn-secondary", action: "cancel" },
                 { text: "Truncate All", class: "btn-danger", action: "confirm" },
             ],
             async (action) => {
