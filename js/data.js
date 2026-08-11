@@ -46,15 +46,21 @@ var DataPage = (() => {
             // Delegated clicks for pagination and delete (container = #page-content)
             const container = document.getElementById("page-content");
             container.addEventListener("click", (e) => {
+                const pagFirst = e.target.closest("#pag-first");
                 const pagPrev = e.target.closest("#pag-prev");
                 const pagNext = e.target.closest("#pag-next");
+                const pagLast = e.target.closest("#pag-last");
                 const pagPage = e.target.closest(".pag-page");
                 const delBtn = e.target.closest("[data-action='delete']");
 
-                if (pagPrev) {
+                if (pagFirst) {
+                    if (currentPage !== 1) { currentPage = 1; loadData(); }
+                } else if (pagPrev) {
                     if (currentPage > 1) { currentPage--; loadData(); }
                 } else if (pagNext) {
                     if (currentPage < totalPages) { currentPage++; loadData(); }
+                } else if (pagLast) {
+                    if (currentPage !== totalPages) { currentPage = totalPages; loadData(); }
                 } else if (pagPage) {
                     currentPage = parseInt(pagPage.dataset.page, 10);
                     loadData();
@@ -134,17 +140,28 @@ var DataPage = (() => {
             infoEl.innerHTML = html;
 
             // Pagination (rendered, events handled by delegated listener in load())
+            // Fixed layout: First, Previous, up to 7 page numbers, Next, Last —
+            // always rendered (disabled at the boundaries) so the bar never
+            // reflows, and the numbered window stays fixed-width (max 7 buttons)
+            // regardless of totalPages, so this renders just as fast at 20 pages
+            // as at 2000.
+            const atFirst = currentPage <= 1;
+            const atLast = currentPage >= totalPages;
+
+            const WINDOW = 7;
+            let winStart = Math.max(1, currentPage - Math.floor(WINDOW / 2));
+            let winEnd = Math.min(totalPages, winStart + WINDOW - 1);
+            winStart = Math.max(1, winEnd - WINDOW + 1);
+
             let pagHtml = `<span style="margin-right:12px;">Page ${currentPage} of ${totalPages} (${result.total} total)</span>`;
-            if (currentPage > 1) {
-                pagHtml += `<button class="btn btn-secondary btn-sm" id="pag-prev">Previous</button> `;
-            }
-            for (let p = Math.max(1, currentPage - 2); p <= Math.min(totalPages, currentPage + 2); p++) {
+            pagHtml += `<button class="btn btn-secondary btn-sm" id="pag-first" title="First page" ${atFirst ? "disabled" : ""}>&laquo; First</button> `;
+            pagHtml += `<button class="btn btn-secondary btn-sm" id="pag-prev" ${atFirst ? "disabled" : ""}>Previous</button> `;
+            for (let p = winStart; p <= winEnd; p++) {
                 const cls = p === currentPage ? "btn-primary" : "btn-secondary";
                 pagHtml += ` <button class="btn ${cls} btn-sm pag-page" data-page="${p}">${p}</button> `;
             }
-            if (currentPage < totalPages) {
-                pagHtml += `<button class="btn btn-secondary btn-sm" id="pag-next">Next</button>`;
-            }
+            pagHtml += `<button class="btn btn-secondary btn-sm" id="pag-next" ${atLast ? "disabled" : ""}>Next</button> `;
+            pagHtml += `<button class="btn btn-secondary btn-sm" id="pag-last" title="Last page" ${atLast ? "disabled" : ""}>Last &raquo;</button>`;
             pagEl.innerHTML = pagHtml;
 
         } catch (err) {
