@@ -21,7 +21,7 @@ var UploadPage = (() => {
                         <div class="form-group">
                             <label for="pdf-file">Choose file</label>
                             <input type="file" id="pdf-file" accept="application/pdf,.pdf,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,.xlsx,.xls" required>
-                            <small style="color:#666;">Accepted: PDF or Excel (.xlsx, .xls)</small>
+                            <small class="text-muted">Accepted: PDF or Excel (.xlsx, .xls)</small>
                         </div>
                         <div class="form-group">
                             <label for="pdf-password-input">PDF Password (if encrypted)</label>
@@ -47,13 +47,13 @@ var UploadPage = (() => {
         const resultBody = document.getElementById("upload-result-body");
         resultCard.style.display = "block";
         resultBody.innerHTML = `
-            <p style="color:#d68910; font-size:14px; margin-bottom:10px;"><strong>${App.escapeHtml(message)}</strong></p>
+            <p class="text-warning mb-3"><strong>${App.escapeHtml(message)}</strong></p>
             <div class="form-group">
                 <label for="pdf-password-prompt">Enter PDF Password</label>
                 <input type="password" id="pdf-password-prompt" class="form-control" placeholder="Enter password to unlock PDF" autofocus>
             </div>
             <button class="btn btn-primary" id="btn-password-submit">Submit Password</button>
-            <button class="btn btn-secondary" id="btn-password-cancel" style="margin-left:8px;">Cancel</button>
+            <button class="btn btn-secondary ml-2" id="btn-password-cancel">Cancel</button>
         `;
 
         document.getElementById("btn-password-submit").addEventListener("click", async () => {
@@ -125,7 +125,7 @@ var UploadPage = (() => {
                 App.toast("Incorrect password", "error");
             } else {
                 resultBody.innerHTML = `
-                    <p style="color:#dc3545;"><strong>Import Failed</strong></p>
+                    <p class="text-danger"><strong>Import Failed</strong></p>
                     <p>${App.escapeHtml(err.message || "Unknown error")}</p>
                 `;
                 App.handleApiError(err);
@@ -222,7 +222,7 @@ var UploadPage = (() => {
 
             resultCard.style.display = "block";
             resultBody.innerHTML = `
-                <p style="color:#dc3545;"><strong>Import Failed</strong></p>
+                <p class="text-danger"><strong>Import Failed</strong></p>
                 <p>${App.escapeHtml(err.message || "Unknown error")}</p>
             `;
             App.handleApiError(err);
@@ -245,8 +245,8 @@ var UploadPage = (() => {
 
         // Document-level fields — values found outside the table (e.g. account number)
         if (result.document_fields && Object.keys(result.document_fields).length > 0) {
-            html += `<div style="margin-top:10px; padding:8px; background:#d4edda; border-radius:4px;">`;
-            html += `<p style="color:#155724; margin:0;"><strong>Auto-filled from document:</strong> `;
+            html += `<div class="callout callout-success">`;
+            html += `<p><strong>Auto-filled from document:</strong> `;
             html += Object.entries(result.document_fields)
                 .map(([f, v]) => `${App.escapeHtml(f)} = ${App.escapeHtml(v)}`)
                 .join(", ");
@@ -255,9 +255,9 @@ var UploadPage = (() => {
 
         // Unmapped headers — PDF columns that weren't matched to any field
         if (result.unmapped_headers && result.unmapped_headers.length > 0) {
-            html += `<div style="margin-top:10px; padding:8px; background:#fff3cd; border-radius:4px;">`;
-            html += `<p style="color:#856404; margin:0 0 6px 0;"><strong>Unmapped PDF columns:</strong> ${App.escapeHtml(result.unmapped_headers.join(", "))}</p>`;
-            html += `<p style="color:#856404; margin:0; font-size:13px;">Go to Field Mappings to map these to your custom fields.</p>`;
+            html += `<div class="callout callout-warning">`;
+            html += `<p><strong>Unmapped PDF columns:</strong> ${App.escapeHtml(result.unmapped_headers.join(", "))}</p>`;
+            html += `<p class="text-sm">Go to Field Mappings to map these to your custom fields.</p>`;
             html += `</div>`;
         }
 
@@ -265,20 +265,20 @@ var UploadPage = (() => {
         if (result.fill_rates) {
             const lowFill = Object.entries(result.fill_rates).filter(([, v]) => v.filled < v.total && v.total > 0);
             if (lowFill.length > 0) {
-                html += `<div style="margin-top:10px; padding:8px; background:#f8f9fa; border-radius:4px;">`;
-                html += `<p style="margin:0 0 6px 0;"><strong>Field fill rates:</strong></p>`;
-                html += `<table style="font-size:13px; border-collapse:collapse;">`;
+                html += `<div class="callout callout-neutral">`;
+                html += `<p><strong>Field fill rates:</strong></p>`;
+                html += `<table class="mini-table">`;
                 for (const [field, info] of lowFill) {
                     const pct = Math.round((info.filled / info.total) * 100);
-                    const warn = pct === 0 ? "color:#dc3545;" : pct < 50 ? "color:#d68910;" : "";
-                    html += `<tr><td style="padding:2px 8px;">${App.escapeHtml(field)}</td>`;
-                    html += `<td style="${warn}">${info.filled}/${info.total} (${pct}%)</td></tr>`;
+                    const warnClass = pct === 0 ? "text-danger" : pct < 50 ? "text-warning" : "";
+                    html += `<tr><td>${App.escapeHtml(field)}</td>`;
+                    html += `<td class="${warnClass}">${info.filled}/${info.total} (${pct}%)</td></tr>`;
                 }
                 html += `</table></div>`;
             }
         }
 
-        html += `<a href="#data" class="btn btn-secondary" style="margin-top:12px;">View Master Data</a>`;
+        html += `<a href="#data" class="btn btn-secondary mt-3">View Master Data</a>`;
         return html;
     }
 

@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>DPL Data Bank</title>
     <link rel="stylesheet" href="css/style.css">
-    <link rel="preconnect" href="">
+    <link rel="preconnect" href="https://dpl-project.onrender.com">
 </head>
 <body>
     <!-- Login Page -->
@@ -27,9 +27,6 @@
                 <button type="submit" id="btn-login" class="btn btn-primary btn-full">Login</button>
                 <div id="login-error" class="error-msg hidden"></div>
             </form>
-            <div class="auth-footer">
-                <p>Default admin: <strong>admin / admin123</strong></p>
-            </div>
         </div>
     </div>
 
@@ -77,6 +74,7 @@
     <!-- Modal container -->
     <div id="modal-container" class="modal-overlay">
         <div class="modal">
+            <button class="modal-close" id="modal-close-btn" aria-label="Close">&times;</button>
             <h3 id="modal-title"></h3>
             <div id="modal-body"></div>
             <div class="modal-actions" id="modal-actions"></div>

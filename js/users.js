@@ -101,7 +101,7 @@ var UsersPage = (() => {
             }
 
             const currentUser = getCurrentUser();
-            let html = `<div style="overflow-x:auto;">
+            let html = `<div class="table-scroll">
                 <table class="data-table">
                     <thead><tr>
                         <th>ID</th><th>Username</th><th>Level</th><th>Created</th><th>Actions</th>
@@ -123,7 +123,7 @@ var UsersPage = (() => {
                             <button class="btn btn-secondary btn-sm" data-action="edit" data-id="${item.id}">Edit</button>
                             <button class="btn btn-secondary btn-sm" data-action="level" data-id="${item.id}" data-level="${itemLevel}">Level</button>
                             <button class="btn btn-danger btn-sm" data-action="delete" data-id="${item.id}" data-name="${App.escapeHtml(item.username)}">Delete</button>
-                        ` : `<span style="color:#aaa;font-size:13px;">--</span>`}
+                        ` : `<span class="no-value">--</span>`}
                     </td>
                 </tr>`;
             });
@@ -258,7 +258,7 @@ var UsersPage = (() => {
         App.showModal(
             "Delete User",
             `<p>Are you sure you want to delete user <strong>${App.escapeHtml(username)}</strong>?</p>
-             <p style="color:#dc3545;font-size:13px;">This action cannot be undone.</p>`,
+             <p class="text-danger text-sm">This action cannot be undone.</p>`,
             [
                 { text: "Cancel", class: "btn-secondary", action: "cancel" },
                 { text: "Delete", class: "btn-danger", action: "confirm" },

@@ -3,16 +3,32 @@
 const App = (() => {
     let currentSection = null;
 
+    // ===== ICONS (inline SVG, currentColor — replaces emoji so every menu
+    // item renders identically across OS/browsers and can be recolored) =====
+    function icon(inner) {
+        return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inner}</svg>`;
+    }
+    const ICONS = {
+        dashboard: icon('<line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line>'),
+        tag: icon('<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"></path><line x1="7" y1="7" x2="7.01" y2="7"></line>'),
+        layout: icon('<rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="3" y1="9" x2="21" y2="9"></line><line x1="9" y1="21" x2="9" y2="9"></line>'),
+        clock: icon('<circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline>'),
+        plusCircle: icon('<circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line>'),
+        users: icon('<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path>'),
+        upload: icon('<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line>'),
+        database: icon('<ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>'),
+    };
+
     // ===== MENU CONFIG =====
     const MENU = [
-        { id: 1, label: "Dashboard", section: "dashboard", minLevel: 0, icon: "📊" },
-        { id: 2, label: "Field Mappings", section: "field-mappings", minLevel: 0, icon: "📝" },
-        { id: 3, label: "Table Structure", section: "table-structure", minLevel: 0, icon: "📋" },
-        { id: 4, label: "Change Log", section: "change-log", minLevel: 1, icon: "📒" },
-        { id: 5, label: "Custom Fields", section: "custom-fields", minLevel: 1, icon: "➕" },
-        { id: 6, label: "Users", section: "users", minLevel: 1, icon: "👥" },
-        { id: 7, label: "Bank Statements", section: "import", minLevel: 0, icon: "📥" },
-        { id: 8, label: "Master Data", section: "data", minLevel: 0, icon: "📋" },
+        { id: 1, label: "Dashboard", section: "dashboard", minLevel: 0, icon: ICONS.dashboard },
+        { id: 2, label: "Field Mappings", section: "field-mappings", minLevel: 0, icon: ICONS.tag },
+        { id: 3, label: "Table Structure", section: "table-structure", minLevel: 0, icon: ICONS.layout },
+        { id: 4, label: "Change Log", section: "change-log", minLevel: 1, icon: ICONS.clock },
+        { id: 5, label: "Custom Fields", section: "custom-fields", minLevel: 1, icon: ICONS.plusCircle },
+        { id: 6, label: "Users", section: "users", minLevel: 1, icon: ICONS.users },
+        { id: 7, label: "Bank Statements", section: "import", minLevel: 0, icon: ICONS.upload },
+        { id: 8, label: "Master Data", section: "data", minLevel: 0, icon: ICONS.database },
     ];
 
     const LEVEL_NAMES = { 0: "Staff", 1: "Manager", 2: "Admin" };
@@ -81,14 +97,30 @@ const App = (() => {
     }
 
     // ===== TOAST =====
+    const TOAST_ICONS = { success: "✓", error: "✕", warning: "!", info: "i" };
+
     function toast(message, type = "info") {
         const container = document.getElementById("toast-container");
         if (!container) return;
         const el = document.createElement("div");
         el.className = `toast ${type}`;
-        el.textContent = message;
+        el.setAttribute("role", type === "error" ? "alert" : "status");
+        el.innerHTML = `
+            <span class="toast-icon">${TOAST_ICONS[type] || TOAST_ICONS.info}</span>
+            <span class="toast-message">${escapeHtml(message)}</span>
+            <button class="toast-close" aria-label="Dismiss">&times;</button>
+        `;
         container.appendChild(el);
-        setTimeout(() => { if (el.parentNode) el.remove(); }, 4000);
+
+        const dismiss = () => {
+            if (!el.parentNode) return;
+            el.classList.add("toast-hiding");
+            setTimeout(() => { if (el.parentNode) el.remove(); }, 250);
+        };
+        el.querySelector(".toast-close").addEventListener("click", dismiss);
+        let autoTimer = setTimeout(dismiss, 4000);
+        el.addEventListener("mouseenter", () => clearTimeout(autoTimer));
+        el.addEventListener("mouseleave", () => { autoTimer = setTimeout(dismiss, 1500); });
     }
 
     // ===== MODAL =====
@@ -97,6 +129,7 @@ const App = (() => {
         const titleEl = document.getElementById("modal-title");
         const bodyEl = document.getElementById("modal-body");
         const actionsEl = document.getElementById("modal-actions");
+        const dialogEl = overlay ? overlay.querySelector(".modal") : null;
         if (!overlay) return;
         titleEl.textContent = title;
         bodyEl.innerHTML = bodyHtml;
@@ -108,6 +141,11 @@ const App = (() => {
             btn.addEventListener("click", async () => { if (onAction) await onAction(act.action); });
             actionsEl.appendChild(btn);
         });
+        if (dialogEl) {
+            dialogEl.setAttribute("role", "dialog");
+            dialogEl.setAttribute("aria-modal", "true");
+            dialogEl.setAttribute("aria-labelledby", "modal-title");
+        }
         overlay.classList.add("active");
     }
 
@@ -171,6 +209,7 @@ const App = (() => {
         document.getElementById("user-name").textContent = user.username;
         const badge = document.getElementById("user-level-badge");
         badge.textContent = LEVEL_NAMES[userLevel] || "Unknown";
+        badge.className = `badge-${(LEVEL_NAMES[userLevel] || "staff").toLowerCase()}`;
 
         const topbarUser = document.getElementById("topbar-user");
         if (topbarUser) topbarUser.textContent = `${user.username} (${LEVEL_NAMES[userLevel]})`;
@@ -183,7 +222,7 @@ const App = (() => {
             const li = document.createElement("li");
             const a = document.createElement("a");
             a.href = `#${item.section}`;
-            a.textContent = `${item.icon} ${item.label}`;
+            a.innerHTML = `${item.icon}<span>${escapeHtml(item.label)}</span>`;
             a.dataset.section = item.section;
             a.addEventListener("click", (e) => {
                 e.preventDefault();
@@ -275,8 +314,8 @@ const App = (() => {
             container.innerHTML = `<div class="error-state">
                 <h2>Page Load Error</h2>
                 <p><strong>${escapeHtml(globalName)}</strong></p>
-                <p style="color:#666">${escapeHtml(err.message)}</p>
-                <p style="color:#888; font-size:0.85em">Check browser console (F12) for details.</p>
+                <p class="text-muted">${escapeHtml(err.message)}</p>
+                <p class="text-muted text-sm">Check browser console (F12) for details.</p>
                 <button class="btn btn-primary" onclick="location.reload()">Retry</button>
             </div>`;
         }
@@ -354,7 +393,7 @@ const App = (() => {
             document.getElementById('dash-role').textContent = cachedLevelName;
             document.getElementById('dash-system').textContent = 'Offline';
             document.getElementById('dash-welcome').innerHTML =
-                `Using cached session. <span style="color:#e53e3e">Cannot connect to server.</span>`;
+                `Using cached session. <span class="text-danger">Cannot connect to server.</span>`;
 
             toast('Using offline mode. Some features may not work.', 'warning');
         }
@@ -433,10 +472,11 @@ const App = (() => {
 
     // ===== BOOTSTRAP =====
     async function bootstrap() {
-        // Modal close on backdrop
+        // Modal close on backdrop or close button
         document.getElementById("modal-container").addEventListener("click", (e) => {
             if (e.target.id === "modal-container") closeModal();
         });
+        document.getElementById("modal-close-btn").addEventListener("click", closeModal);
 
         // Login form
         document.getElementById("login-form").addEventListener("submit", async (e) => {

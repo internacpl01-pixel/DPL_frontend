@@ -28,7 +28,7 @@ var LogPage = (() => {
             return;
         }
 
-        let html = `<div class="card" style="overflow-x:auto;">
+        let html = `<div class="card table-scroll">
             <table class="data-table">
                 <thead><tr>
                     <th>ID</th><th>Field</th><th>Row ID</th><th>Table</th><th>Changed At</th>

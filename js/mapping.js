@@ -32,13 +32,13 @@ var MappingPage = (() => {
                         <div class="form-group">
                             <label for="edit-displayname">Display Name</label>
                             <input type="text" id="edit-displayname" class="form-control" placeholder="Leave empty to keep current">
-                            ${canEdit ? `<button type="button" class="btn btn-primary btn-sm" id="btn-save-displayname" style="margin-left:8px;">Save</button>` : ""}
+                            ${canEdit ? `<button type="button" class="btn btn-primary btn-sm ml-2" id="btn-save-displayname">Save</button>` : ""}
                         </div>
                         <div class="form-group">
                             <label>Map Fields</label>
                             <div id="mapfield-tags" class="mapfield-tags"></div>
                             ${canEdit ? `
-                            <div class="input-group" style="margin-top:8px;">
+                            <div class="input-group mt-2">
                                 <input type="text" class="form-control" id="new-mapfield" placeholder="Add new value...">
                                 <button type="button" class="btn btn-primary btn-sm" id="btn-add-mapfield">Add</button>
                             </div>` : ""}

@@ -19,10 +19,6 @@ const Auth = {
     return user ? (user.access_level ?? user.level ?? -1) : -1;
   },
 
-  canAccess(minLevel) {
-    return this.getUserLevel() >= minLevel;
-  },
-
   getStoredUser() {
     return this.getCurrentUser();
   },

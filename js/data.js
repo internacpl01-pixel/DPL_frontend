@@ -16,8 +16,8 @@ var DataPage = (() => {
         const container = document.getElementById("page-content");
         container.innerHTML = `
             <div class="page-section active" id="section-data">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                    <div class="search-box" style="flex:1; margin-right:12px;">
+                <div class="toolbar">
+                    <div class="search-box">
                         <input type="text" id="data-search" class="form-control" placeholder="Search all columns...">
                     </div>
                     <button class="btn btn-danger btn-sm" id="btn-truncate">Truncate All Data</button>
@@ -25,7 +25,7 @@ var DataPage = (() => {
                 <div id="data-table-area">
                     <div id="data-info">${App.spinner()}</div>
                 </div>
-                <div id="data-pagination" style="margin-top:12px; text-align:center;"></div>
+                <div id="data-pagination" class="pagination-bar"></div>
             </div>
         `;
 
@@ -104,13 +104,16 @@ var DataPage = (() => {
             }
 
             // Build table
-            let html = `<div style="overflow-x:auto;">
+            const isNumericCol = (col) =>
+                ["numeric", "real", "double precision", "integer", "bigint"].includes((col.type || "").toLowerCase());
+
+            let html = `<div class="table-scroll">
                 <table class="data-table">
                     <thead><tr>`;
 
             allColumns.forEach(col => {
                 const headerText = col.displayname && col.displayname !== col.name ? col.displayname : col.name;
-                html += `<th>${App.escapeHtml(headerText)}</th>`;
+                html += `<th${isNumericCol(col) ? ' class="text-right"' : ""}>${App.escapeHtml(headerText)}</th>`;
             });
 
             html += `<th>Actions</th></tr></thead><tbody>`;
@@ -128,7 +131,7 @@ var DataPage = (() => {
 
                 allColumns.forEach(col => {
                     const val = row[col.name] || "";
-                    html += `<td>${App.escapeHtml(String(val))}</td>`;
+                    html += `<td${isNumericCol(col) ? ' class="text-right"' : ""}>${App.escapeHtml(String(val))}</td>`;
                 });
 
                 html += `<td class="actions">
@@ -153,7 +156,7 @@ var DataPage = (() => {
             let winEnd = Math.min(totalPages, winStart + WINDOW - 1);
             winStart = Math.max(1, winEnd - WINDOW + 1);
 
-            let pagHtml = `<span style="margin-right:12px;">Page ${currentPage} of ${totalPages} (${result.total} total)</span>`;
+            let pagHtml = `<span class="mr-3">Page ${currentPage} of ${totalPages} (${result.total} total)</span>`;
             pagHtml += `<button class="btn btn-secondary btn-sm" id="pag-first" title="First page" ${atFirst ? "disabled" : ""}>&laquo; First</button> `;
             pagHtml += `<button class="btn btn-secondary btn-sm" id="pag-prev" ${atFirst ? "disabled" : ""}>Previous</button> `;
             for (let p = winStart; p <= winEnd; p++) {
@@ -174,7 +177,7 @@ var DataPage = (() => {
         App.showModal(
             "Delete Row",
             `<p>Are you sure you want to delete row <strong>${rowId}</strong>?</p>
-             <p style="color:#dc3545;font-size:13px;">This action cannot be undone.</p>`,
+             <p class="text-danger text-sm">This action cannot be undone.</p>`,
             [
                 { text: "Cancel", class: "btn-secondary", action: "cancel" },
                 { text: "Delete", class: "btn-danger", action: "confirm" },
@@ -200,8 +203,8 @@ var DataPage = (() => {
     function openTruncateConfirm() {
         App.showModal(
             "Truncate All Data",
-            `<p style="color:#dc3545;font-size:15px;"><strong>This will permanently delete ALL data from the master table.</strong></p>
-             <p style="color:#dc3545;font-size:13px;">This action cannot be undone.</p>`,
+            `<p class="text-danger"><strong>This will permanently delete ALL data from the master table.</strong></p>
+             <p class="text-danger text-sm">This action cannot be undone.</p>`,
             [
                 { text: "Cancel", class: "btn-secondary", action: "cancel" },
                 { text: "Truncate All", class: "btn-danger", action: "confirm" },
