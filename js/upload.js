@@ -176,6 +176,16 @@ var UploadPage = (() => {
         // Read password from the form's password field
         const passwordValue = document.getElementById("pdf-password-input")?.value?.trim() || "";
 
+        // Show processing indicator during the API call
+        resultCard.style.display = "block";
+        resultBody.innerHTML = `
+            <div class="loading-container">
+                <div class="spinner"></div>
+                <p><strong>Parsing started, please wait...</strong></p>
+                <p style="color:#888; font-size:13px;">${App.escapeHtml(file.name)} (${sizeMB} MB)</p>
+            </div>
+        `;
+
         try {
             const result = isExcel
                 ? await Api.uploadExcel(file)
