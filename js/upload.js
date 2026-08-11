@@ -95,12 +95,21 @@ var UploadPage = (() => {
 
         const resultCard = document.getElementById("upload-result");
         const resultBody = document.getElementById("upload-result-body");
-        resultBody.innerHTML = `<p>${App.spinner()} Decrypting PDF...</p>`;
+        resultBody.innerHTML = "";
+
+        App.showProcessing(
+            "Decrypting and parsing PDF...",
+            file.name,
+            ["Unlocking PDF...", "Extracting text and tables...", "Detecting column headers...",
+             "Assembling transaction rows...", "Validating balance chain...", "Saving to master table..."]
+        );
+        await new Promise(resolve => requestAnimationFrame(resolve));
 
         try {
             const result = await Api.uploadPdf(file, password);
 
             resultBody.innerHTML = renderImportResult(file.name, result);
+            resultCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
 
             if (result.inserted > 0) {
                 App.toast(`Imported ${result.inserted} rows`, "success");
@@ -112,11 +121,8 @@ var UploadPage = (() => {
             document.getElementById("pdf-upload-form").reset();
         } catch (err) {
             if (err.message && err.message.includes("Incorrect password")) {
-                resultBody.innerHTML = `
-                    <p style="color:#dc3545;"><strong>${App.escapeHtml(err.message)}</strong></p>
-                `;
+                showPasswordPrompt(file, err.message);
                 App.toast("Incorrect password", "error");
-                setTimeout(() => document.getElementById("pdf-password-prompt")?.focus(), 100);
             } else {
                 resultBody.innerHTML = `
                     <p style="color:#dc3545;"><strong>Import Failed</strong></p>
@@ -127,8 +133,12 @@ var UploadPage = (() => {
                 document.getElementById("pdf-upload-form").reset();
             }
         } finally {
-            btn.disabled = false;
-            btn.textContent = originalText;
+            App.hideProcessing();
+            const btnAfter = document.getElementById("btn-password-submit");
+            if (btnAfter) {
+                btnAfter.disabled = false;
+                btnAfter.textContent = originalText;
+            }
         }
     }
 
@@ -170,17 +180,19 @@ var UploadPage = (() => {
         // Read password from the form's password field
         const passwordValue = document.getElementById("pdf-password-input")?.value?.trim() || "";
 
-        // Show processing indicator during the API call
-        resultCard.style.display = "block";
-        resultBody.innerHTML = `
-            <div class="loading-container">
-                <div class="spinner"></div>
-                <p><strong>Parsing started, please wait...</strong></p>
-                <p style="color:#888; font-size:13px;">${App.escapeHtml(file.name)} (${sizeMB} MB)</p>
-            </div>
-        `;
+        // Full-screen processing overlay — clear feedback that work is happening
+        App.showProcessing(
+            isPdf ? "Parsing PDF statement..." : "Reading Excel file...",
+            `${file.name} (${sizeMB} MB)`,
+            isPdf
+                ? ["Extracting text and tables...", "Detecting column headers...",
+                   "Assembling transaction rows...", "Validating balance chain...",
+                   "Saving to master table..."]
+                : ["Reading sheet...", "Detecting column headers...",
+                   "Assembling transaction rows...", "Saving to master table..."]
+        );
 
-        // Yield to the browser so it paints the spinner before the await blocks the main thread
+        // Yield so the browser paints the overlay before the request starts
         await new Promise(resolve => requestAnimationFrame(resolve));
 
         try {
@@ -190,6 +202,7 @@ var UploadPage = (() => {
 
             resultCard.style.display = "block";
             resultBody.innerHTML = renderImportResult(file.name, result);
+            resultCard.scrollIntoView({ behavior: "smooth", block: "nearest" });
 
             if (result.inserted > 0) {
                 App.toast(`Imported ${result.inserted} rows`, "success");
@@ -215,6 +228,7 @@ var UploadPage = (() => {
             App.handleApiError(err);
             document.getElementById("pdf-upload-form").reset();
         } finally {
+            App.hideProcessing();
             if (!pendingFile) {
                 btn.disabled = false;
                 btn.textContent = originalText;

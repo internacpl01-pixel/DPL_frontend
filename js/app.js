@@ -30,6 +30,52 @@ const App = (() => {
         return `<div class="loading-container"><div class="spinner"></div><p>Loading...</p></div>`;
     }
 
+    // ===== PROCESSING OVERLAY (full-screen, for long operations like PDF parsing) =====
+    let processingTimers = [];
+
+    function showProcessing(title, subtitle, steps) {
+        hideProcessing();
+        let el = document.getElementById("processing-overlay");
+        if (!el) {
+            el = document.createElement("div");
+            el.id = "processing-overlay";
+            document.body.appendChild(el);
+        }
+        el.innerHTML = `
+            <div class="processing-box">
+                <div class="spinner-lg"></div>
+                <div class="processing-title">${escapeHtml(title || "Processing...")}</div>
+                ${subtitle ? `<div class="processing-sub">${escapeHtml(subtitle)}</div>` : ""}
+                <div class="processing-step" id="processing-step"></div>
+                <div class="processing-elapsed" id="processing-elapsed">0s elapsed</div>
+            </div>
+        `;
+        el.style.display = "flex";
+
+        const started = Date.now();
+        const elapsedEl = document.getElementById("processing-elapsed");
+        processingTimers.push(setInterval(() => {
+            if (elapsedEl) elapsedEl.textContent = `${Math.round((Date.now() - started) / 1000)}s elapsed`;
+        }, 1000));
+
+        if (steps && steps.length) {
+            const stepEl = document.getElementById("processing-step");
+            let i = 0;
+            if (stepEl) stepEl.textContent = steps[0];
+            processingTimers.push(setInterval(() => {
+                i = (i + 1) % steps.length;
+                if (stepEl) stepEl.textContent = steps[i];
+            }, 2200));
+        }
+    }
+
+    function hideProcessing() {
+        processingTimers.forEach(clearInterval);
+        processingTimers = [];
+        const el = document.getElementById("processing-overlay");
+        if (el) el.style.display = "none";
+    }
+
     function emptyState(msg) {
         return `<div class="empty-state"><p>${escapeHtml(msg)}</p></div>`;
     }
@@ -457,6 +503,8 @@ const App = (() => {
         setTitle,
         escapeHtml,
         spinner,
+        showProcessing,
+        hideProcessing,
         emptyState,
         handleApiError,
         showLoginPage,
