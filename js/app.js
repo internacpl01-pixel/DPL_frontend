@@ -138,7 +138,16 @@ const App = (() => {
             const btn = document.createElement("button");
             btn.className = `btn ${act.class || "btn-secondary"}`;
             btn.textContent = act.text;
-            btn.addEventListener("click", async () => { if (onAction) await onAction(act.action); });
+            btn.addEventListener("click", async () => {
+                // "cancel" always just closes — no caller has ever needed it to do
+                // anything else, so this is handled centrally instead of requiring
+                // every onAction callback to remember to call closeModal() itself.
+                if (act.action === "cancel") {
+                    closeModal();
+                    return;
+                }
+                if (onAction) await onAction(act.action);
+            });
             actionsEl.appendChild(btn);
         });
         if (dialogEl) {
