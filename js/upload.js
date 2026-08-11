@@ -100,12 +100,7 @@ var UploadPage = (() => {
         try {
             const result = await Api.uploadPdf(file, password);
 
-            resultBody.innerHTML = `
-                <p><strong>File:</strong> ${App.escapeHtml(file.name)}</p>
-                <p><strong>Rows Read:</strong> ${result.row_count}</p>
-                <p><strong>Rows Imported:</strong> ${result.inserted}</p>
-                <a href="#data" class="btn btn-secondary" style="margin-top:12px;">View Master Data</a>
-            `;
+            resultBody.innerHTML = renderImportResult(file.name, result);
 
             if (result.inserted > 0) {
                 App.toast(`Imported ${result.inserted} rows`, "success");
@@ -121,7 +116,6 @@ var UploadPage = (() => {
                     <p style="color:#dc3545;"><strong>${App.escapeHtml(err.message)}</strong></p>
                 `;
                 App.toast("Incorrect password", "error");
-                // Re-focus the password field
                 setTimeout(() => document.getElementById("pdf-password-prompt")?.focus(), 100);
             } else {
                 resultBody.innerHTML = `
@@ -195,12 +189,7 @@ var UploadPage = (() => {
                 : await Api.uploadPdf(file, passwordValue);
 
             resultCard.style.display = "block";
-            resultBody.innerHTML = `
-                <p><strong>File:</strong> ${App.escapeHtml(file.name)}</p>
-                <p><strong>Rows Read:</strong> ${result.row_count}</p>
-                <p><strong>Rows Imported:</strong> ${result.inserted}</p>
-                <a href="#data" class="btn btn-secondary" style="margin-top:12px;">View Master Data</a>
-            `;
+            resultBody.innerHTML = renderImportResult(file.name, result);
 
             if (result.inserted > 0) {
                 App.toast(`Imported ${result.inserted} rows`, "success");
@@ -231,6 +220,42 @@ var UploadPage = (() => {
                 btn.textContent = originalText;
             }
         }
+    }
+
+    function renderImportResult(fileName, result) {
+        let html = `
+            <p><strong>File:</strong> ${App.escapeHtml(fileName)}</p>
+            <p><strong>Rows Read:</strong> ${result.row_count}</p>
+            <p><strong>Rows Imported:</strong> ${result.inserted}</p>
+        `;
+
+        // Unmapped headers — PDF columns that weren't matched to any field
+        if (result.unmapped_headers && result.unmapped_headers.length > 0) {
+            html += `<div style="margin-top:10px; padding:8px; background:#fff3cd; border-radius:4px;">`;
+            html += `<p style="color:#856404; margin:0 0 6px 0;"><strong>Unmapped PDF columns:</strong> ${App.escapeHtml(result.unmapped_headers.join(", "))}</p>`;
+            html += `<p style="color:#856404; margin:0; font-size:13px;">Go to Field Mappings to map these to your custom fields.</p>`;
+            html += `</div>`;
+        }
+
+        // Per-field fill rates — shows which columns got data and which didn't
+        if (result.fill_rates) {
+            const lowFill = Object.entries(result.fill_rates).filter(([, v]) => v.filled < v.total && v.total > 0);
+            if (lowFill.length > 0) {
+                html += `<div style="margin-top:10px; padding:8px; background:#f8f9fa; border-radius:4px;">`;
+                html += `<p style="margin:0 0 6px 0;"><strong>Field fill rates:</strong></p>`;
+                html += `<table style="font-size:13px; border-collapse:collapse;">`;
+                for (const [field, info] of lowFill) {
+                    const pct = Math.round((info.filled / info.total) * 100);
+                    const warn = pct === 0 ? "color:#dc3545;" : pct < 50 ? "color:#d68910;" : "";
+                    html += `<tr><td style="padding:2px 8px;">${App.escapeHtml(field)}</td>`;
+                    html += `<td style="${warn}">${info.filled}/${info.total} (${pct}%)</td></tr>`;
+                }
+                html += `</table></div>`;
+            }
+        }
+
+        html += `<a href="#data" class="btn btn-secondary" style="margin-top:12px;">View Master Data</a>`;
+        return html;
     }
 
     return { load, TITLE };
