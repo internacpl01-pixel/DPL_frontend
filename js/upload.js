@@ -186,6 +186,9 @@ var UploadPage = (() => {
             </div>
         `;
 
+        // Yield to the browser so it paints the spinner before the await blocks the main thread
+        await new Promise(resolve => requestAnimationFrame(resolve));
+
         try {
             const result = isExcel
                 ? await Api.uploadExcel(file)
