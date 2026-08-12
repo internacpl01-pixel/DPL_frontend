@@ -20,6 +20,14 @@ var DataPage = (() => {
                     <div class="search-box">
                         <input type="text" id="data-search" class="form-control" placeholder="Search all columns...">
                     </div>
+                    <div class="export-dropdown" id="export-dropdown">
+                        <button class="btn btn-secondary btn-sm" id="btn-export">Export</button>
+                        <div class="dropdown-menu" id="export-menu">
+                            <a href="#" data-format="csv">CSV</a>
+                            <a href="#" data-format="xlsx">Excel (.xlsx)</a>
+                            <a href="#" data-format="pdf">PDF</a>
+                        </div>
+                    </div>
                     <button class="btn btn-danger btn-sm" id="btn-truncate">Truncate All Data</button>
                 </div>
                 <div id="data-table-area">
@@ -49,6 +57,8 @@ var DataPage = (() => {
 
             container.addEventListener("click", (e) => {
                 const truncateBtn = e.target.closest("#btn-truncate");
+                const btnExport = e.target.closest("#btn-export");
+                const exportLink = e.target.closest("#export-menu a");
                 const pagFirst = e.target.closest("#pag-first");
                 const pagPrev = e.target.closest("#pag-prev");
                 const pagNext = e.target.closest("#pag-next");
@@ -56,7 +66,22 @@ var DataPage = (() => {
                 const pagPage = e.target.closest(".pag-page");
                 const delBtn = e.target.closest("[data-action='delete']");
 
-                if (truncateBtn) {
+                // Close export dropdown if clicking outside it
+                const menu = document.getElementById("export-menu");
+                if (menu && menu.style.display !== "none" && !btnExport && !exportLink) {
+                    menu.style.display = "none";
+                }
+
+                if (btnExport) {
+                    const menu = document.getElementById("export-menu");
+                    menu.style.display = menu.style.display === "none" ? "block" : "none";
+                } else if (exportLink) {
+                    e.preventDefault();
+                    const menu = document.getElementById("export-menu");
+                    menu.style.display = "none";
+                    const fmt = exportLink.dataset.format;
+                    triggerExport(fmt);
+                } else if (truncateBtn) {
                     openTruncateConfirm();
                 } else if (pagFirst) {
                     if (currentPage !== 1) { currentPage = 1; loadData(); }
@@ -226,6 +251,22 @@ var DataPage = (() => {
                 }
             }
         );
+    }
+
+    async function triggerExport(format) {
+        try {
+            const result = await Api.exportData(format, searchTerm);
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(result.blob);
+            a.download = result.filename;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(a.href);
+            App.toast(`Exporting ${format.toUpperCase()}...`, "success");
+        } catch (err) {
+            App.toast(err.message, "error");
+        }
     }
 
     return { load, TITLE };

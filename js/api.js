@@ -158,6 +158,27 @@ const Api = {
   truncateData: () =>
     apiRequest('/api/data', { method: 'DELETE' }),
 
+  exportData: (format, search = "") => {
+    const token = localStorage.getItem('access_token');
+    const url = `/api/export?format=${encodeURIComponent(format)}&search=${encodeURIComponent(search)}`;
+    return fetch(url, {
+      headers: { 'Authorization': `Bearer ${token}` },
+    }).then(async (response) => {
+      if (!response.ok) {
+        const text = await response.text().catch(() => `HTTP ${response.status}`);
+        throw new Error(text || `HTTP ${response.status}`);
+      }
+      const disposition = response.headers.get('Content-Disposition');
+      let filename = `master_data.${format}`;
+      if (disposition) {
+        const match = disposition.match(/filename="(.+)"/);
+        if (match) filename = match[1];
+      }
+      const blob = await response.blob();
+      return { blob, filename };
+    });
+  },
+
   getUsers: () => apiRequest('/api/users'),
   createUser: (username, password, level) =>
     apiRequest('/api/users', { method: 'POST', body: JSON.stringify({ username, password, level }) }),
