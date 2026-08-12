@@ -160,7 +160,7 @@ const Api = {
 
   exportData: (format, search = "") => {
     const token = localStorage.getItem('access_token');
-    const url = `/api/export?format=${encodeURIComponent(format)}&search=${encodeURIComponent(search)}`;
+    const url = `${API_BASE}/api/export?format=${encodeURIComponent(format)}&search=${encodeURIComponent(search)}`;
     return fetch(url, {
       headers: { 'Authorization': `Bearer ${token}` },
     }).then(async (response) => {

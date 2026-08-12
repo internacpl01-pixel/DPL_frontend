@@ -1282,28 +1282,23 @@ a:hover {
     overflow: hidden;
 }
 
-.export-dropdown .dropdown-menu a {
+.export-dropdown .dropdown-menu .dropdown-item {
     display: block;
+    width: 100%;
     padding: 10px 16px;
     font-size: 13px;
+    font-family: inherit;
     color: var(--color-text);
-    text-decoration: none;
+    background: none;
+    border: none;
+    text-align: left;
     cursor: pointer;
     transition: background-color 0.1s;
     white-space: nowrap;
 }
 
-.export-dropdown .dropdown-menu a:hover {
+.export-dropdown .dropdown-menu .dropdown-item:hover {
     background: var(--color-bg-alt);
-    text-decoration: none;
-}
-
-.export-dropdown .dropdown-menu a:first-child {
-    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
-}
-
-.export-dropdown .dropdown-menu a:last-child {
-    border-radius: 0 0 var(--radius-sm) var(--radius-sm);
 }
 
 /* ===== SIDEBAR TOGGLE (fixed position on mobile) ===== */

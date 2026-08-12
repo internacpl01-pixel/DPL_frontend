@@ -23,9 +23,9 @@ var DataPage = (() => {
                     <div class="export-dropdown" id="export-dropdown">
                         <button class="btn btn-secondary btn-sm" id="btn-export">Export</button>
                         <div class="dropdown-menu" id="export-menu">
-                            <a href="#" data-format="csv">CSV</a>
-                            <a href="#" data-format="xlsx">Excel (.xlsx)</a>
-                            <a href="#" data-format="pdf">PDF</a>
+                            <button type="button" class="dropdown-item" data-format="csv">CSV</button>
+                            <button type="button" class="dropdown-item" data-format="xlsx">Excel (.xlsx)</button>
+                            <button type="button" class="dropdown-item" data-format="pdf">PDF</button>
                         </div>
                     </div>
                     <button class="btn btn-danger btn-sm" id="btn-truncate">Truncate All Data</button>
@@ -58,7 +58,7 @@ var DataPage = (() => {
             container.addEventListener("click", (e) => {
                 const truncateBtn = e.target.closest("#btn-truncate");
                 const btnExport = e.target.closest("#btn-export");
-                const exportLink = e.target.closest("#export-menu a");
+                const exportLink = e.target.closest("#export-menu .dropdown-item");
                 const pagFirst = e.target.closest("#pag-first");
                 const pagPrev = e.target.closest("#pag-prev");
                 const pagNext = e.target.closest("#pag-next");
