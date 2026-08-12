@@ -18,7 +18,7 @@ var DataPage = (() => {
             <div class="page-section active" id="section-data">
                 <div class="toolbar">
                     <div class="search-box">
-                        <input type="text" id="data-search" class="form-control" placeholder="Search all columns...">
+                        <input type="text" id="data-search" class="form-control" inputmode="numeric" placeholder="Search by ID...">
                     </div>
                     <div class="export-dropdown" id="export-dropdown">
                         <button class="btn btn-secondary btn-sm" id="btn-export">Export</button>
@@ -122,14 +122,16 @@ var DataPage = (() => {
         const pagEl = document.getElementById("data-pagination");
 
         try {
-            const result = await Api.getData(currentPage, PAGE_SIZE);
+            const result = await Api.getData(currentPage, PAGE_SIZE, searchTerm);
 
             allColumns = result.columns || [];
             const rows = result.rows || [];
             totalPages = Math.max(1, Math.ceil(result.total / PAGE_SIZE));
 
             if (!rows.length) {
-                infoEl.innerHTML = App.emptyState("No data found. Upload a PDF to import transactions.");
+                infoEl.innerHTML = App.emptyState(searchTerm
+                    ? `No row with ID "${App.escapeHtml(searchTerm)}".`
+                    : "No data found. Upload a PDF to import transactions.");
                 pagEl.innerHTML = "";
                 return;
             }
@@ -151,13 +153,9 @@ var DataPage = (() => {
 
             rows.forEach(row => {
                 const rowId = row.id || "";
-                let matches = true;
-                if (searchTerm) {
-                    const searchable = Object.values(row).join(" ").toLowerCase();
-                    matches = searchable.includes(searchTerm);
-                }
-                if (!matches) return;
-
+                // No client-side filter: the server already returned only the
+                // matching rows, and `total` below counts matches across the
+                // whole table rather than just this page.
                 html += `<tr data-id="${rowId}">`;
 
                 allColumns.forEach(col => {

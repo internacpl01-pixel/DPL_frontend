@@ -150,7 +150,8 @@ const Api = {
   },
 
   // Master Data
-  getData: (page, limit) => apiRequest(`/api/data?page=${page || 1}&limit=${limit || 50}`),
+  getData: (page, limit, search = "") =>
+    apiRequest(`/api/data?page=${page || 1}&limit=${limit || 50}&search=${encodeURIComponent(search)}`),
   addData: (rows) =>
     apiRequest('/api/data', { method: 'POST', body: JSON.stringify({ rows }) }),
   deleteData: (id) =>
