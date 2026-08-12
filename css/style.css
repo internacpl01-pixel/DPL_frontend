@@ -1262,6 +1262,50 @@ a:hover {
     }
 }
 
+/* ===== EXPORT DROPDOWN ===== */
+.export-dropdown {
+    position: relative;
+    display: inline-flex;
+}
+
+.export-dropdown .dropdown-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-md);
+    min-width: 180px;
+    z-index: 100;
+    overflow: hidden;
+}
+
+.export-dropdown .dropdown-menu a {
+    display: block;
+    padding: 10px 16px;
+    font-size: 13px;
+    color: var(--color-text);
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.1s;
+    white-space: nowrap;
+}
+
+.export-dropdown .dropdown-menu a:hover {
+    background: var(--color-bg-alt);
+    text-decoration: none;
+}
+
+.export-dropdown .dropdown-menu a:first-child {
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+}
+
+.export-dropdown .dropdown-menu a:last-child {
+    border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+}
+
 /* ===== SIDEBAR TOGGLE (fixed position on mobile) ===== */
 .sidebar-toggle {
     position: fixed;
