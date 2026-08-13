@@ -129,6 +129,8 @@ const Api = {
 
   createCustomField: (field_type) =>
     apiRequest('/api/custom-fields', { method: 'POST', body: JSON.stringify({ type: field_type }) }),
+  deleteCustomField: (fieldname) =>
+    apiRequest(`/api/custom-fields/${encodeURIComponent(fieldname)}`, { method: 'DELETE' }),
 
   // PDF Upload
   uploadPdf: (file, password) => {
