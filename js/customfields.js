@@ -5,9 +5,10 @@ var CustomFieldPage = (() => {
 
     const VALID_TYPES = ["date", "num", "text"];
 
-    // Mirrors _PROTECTED_COLUMNS in routers/mappings.py. The server refuses
-    // these regardless, so this only decides whether to draw the button.
-    const PROTECTED = ["id", "date", "desc", "withdrawal", "deposits", "balance"];
+    // Mirrors _PROTECTED_COLUMNS in routers/mappings.py. Every field is a
+    // custom field and every one is deletable — id is master's primary key,
+    // has no fieldmap row, and never reaches this list anyway.
+    const PROTECTED = ["id"];
 
     let listenersAttached = false;
 
